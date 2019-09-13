@@ -25,8 +25,9 @@ class PhoneStateReceiver : BroadcastReceiver() {
                 val number = intent?.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
                 Log.d(TAG, "Incoming number : $number")
             } else if (state.equals(TelephonyManager.EXTRA_STATE_OFFHOOK)) {
+                //TODO: extract outgoing call number
                 val number = intent?.getStringExtra(Intent.EXTRA_PHONE_NUMBER)
-                Log.d(TAG, "Outgoing number : $number")
+                Log.d(TAG, "Outgoing number : $number " + intent?.action)
             }
         }
         Log.d(TAG, state)
@@ -34,13 +35,11 @@ class PhoneStateReceiver : BroadcastReceiver() {
     }
 
     private fun intState(state: String?): Int {
-        if (state.equals(TelephonyManager.EXTRA_STATE_OFFHOOK)) {
-            return TelephonyManager.CALL_STATE_OFFHOOK
-        } else if (state.equals(TelephonyManager.EXTRA_STATE_IDLE)) {
-            return TelephonyManager.CALL_STATE_IDLE
-        } else if (state.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
-            return TelephonyManager.CALL_STATE_RINGING
+        return when {
+            state.equals(TelephonyManager.EXTRA_STATE_OFFHOOK) -> TelephonyManager.CALL_STATE_OFFHOOK
+            state.equals(TelephonyManager.EXTRA_STATE_IDLE) -> TelephonyManager.CALL_STATE_IDLE
+            state.equals(TelephonyManager.EXTRA_STATE_RINGING) -> TelephonyManager.CALL_STATE_RINGING
+            else -> -1
         }
-        return -1
     }
 }

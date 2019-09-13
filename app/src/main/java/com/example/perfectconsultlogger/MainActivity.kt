@@ -11,6 +11,7 @@ import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
 
+    private val PERMISSION_REQUEST_PROCESS_OUTGOING_CALLS = 0
     private val PERMISSION_REQUEST_READ_PHONE_STATE = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,6 +31,20 @@ class MainActivity : AppCompatActivity() {
                 this,
                 arrayOf(Manifest.permission.READ_PHONE_STATE),
                 PERMISSION_REQUEST_READ_PHONE_STATE
+            )
+
+        }
+
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.PROCESS_OUTGOING_CALLS
+            )
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.PROCESS_OUTGOING_CALLS),
+                PERMISSION_REQUEST_PROCESS_OUTGOING_CALLS
             )
 
         }
