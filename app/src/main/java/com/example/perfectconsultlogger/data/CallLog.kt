@@ -10,8 +10,7 @@ class CallLog(
     @ColumnInfo(name = "start_time") val startTime: String, @ColumnInfo(name = "end_time") val endTime: String,
     @ColumnInfo(name = "is_incoming") val isIncoming: Boolean
 ) {
-
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
-    val id: Int = 0
+    var id: Int = 0
 }
