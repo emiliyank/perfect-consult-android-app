@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
 import com.example.perfectconsultlogger.R
+import kotlinx.android.synthetic.main.item_call_log.view.*
 
 class CallLogAdapter(val logs: List<com.example.perfectconsultlogger.data.CallLog>): RecyclerView.Adapter<CallLogAdapter.CallLogViewHolder>() {
 
@@ -14,18 +15,13 @@ class CallLogAdapter(val logs: List<com.example.perfectconsultlogger.data.CallLo
         return CallLogViewHolder(textView)
     }
 
-    override fun onBindViewHolder(p0: CallLogViewHolder, p1: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    fun setLogs(data: List<com.example.perfectconsultlogger.data.CallLog>){
-
-    }
-
-    class CallLogViewHolder(view: TextView): RecyclerView.ViewHolder(view) {
-
+    override fun onBindViewHolder(holder: CallLogViewHolder, position: Int) {
+        holder.itemView.txt_number.text = logs[position].number
     }
 
     override fun getItemCount() = logs!!.size
 
+    class CallLogViewHolder(view: TextView): RecyclerView.ViewHolder(view) {
+
+    }
 }
