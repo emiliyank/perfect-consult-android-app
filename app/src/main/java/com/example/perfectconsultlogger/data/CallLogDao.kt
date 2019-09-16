@@ -8,7 +8,7 @@ import android.arch.persistence.room.Query
 @Dao
 interface CallLogDao {
     @Query("SELECT * FROM call_logs")
-    fun getAllLogs() : CallLog
+    fun getAllLogs() : List<CallLog>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(callLog: CallLog)
