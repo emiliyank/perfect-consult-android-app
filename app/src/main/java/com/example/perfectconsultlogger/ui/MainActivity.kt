@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         askForPermissions()
 
-        Database.getInstance(applicationContext).getAll(object : Database.DataListener<List<CallLog>> {
+        Database.getInstance(this).getAll(this, object : Database.DataListener<List<CallLog>> {
             override fun onData(data: List<CallLog>) {
                 allLogs = data
             }

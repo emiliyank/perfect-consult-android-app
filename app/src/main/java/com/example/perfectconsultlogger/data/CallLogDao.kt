@@ -11,7 +11,7 @@ interface CallLogDao {
     fun getAllLogs() : List<CallLog>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(callLog: CallLog)
+    fun insert(callLog: CallLog): Long
 
     @Query("DELETE FROM call_logs")
     fun deleteAll()
