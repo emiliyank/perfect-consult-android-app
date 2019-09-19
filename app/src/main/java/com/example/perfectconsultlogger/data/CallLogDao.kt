@@ -7,6 +7,10 @@ import android.arch.persistence.room.Query
 
 @Dao
 interface CallLogDao {
+
+    @Query("DELETE FROM call_logs")
+    fun dropTable()
+
     @Query("SELECT * FROM call_logs")
     fun getAllLogs() : List<CallLog>
 

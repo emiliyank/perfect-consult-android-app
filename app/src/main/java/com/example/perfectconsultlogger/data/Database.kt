@@ -3,9 +3,6 @@ package com.example.perfectconsultlogger.data
 import android.arch.persistence.room.Room
 import android.content.Context
 import android.os.AsyncTask
-import android.util.Log
-import kotlinx.coroutines.*
-import java.util.*
 
 class Database(context: Context) {
 
@@ -13,6 +10,10 @@ class Database(context: Context) {
 
     private val database: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "app-db")
         .fallbackToDestructiveMigration().build()
+
+    fun dropDatabase(){
+        database.callLogDao().dropTable()
+    }
 
     fun insertCallLog(callLog: CallLog) = InsertTask(database).execute(callLog)
 
@@ -31,27 +32,19 @@ class Database(context: Context) {
         }
     }
 
-    private class InsertTask(database: AppDatabase): AsyncTask<CallLog, Void, Void>(){
-
-        val database = database
+    private class InsertTask(val database: AppDatabase): AsyncTask<CallLog, Void, Void>(){
 
         override fun doInBackground(vararg params: CallLog?): Void? {
             params[0]?.let { database.callLogDao().insert(it) }
             return null
         }
 
-
-
     }
 
-    private class RetrieveTask(listener: DataListener<List<CallLog>>, database: AppDatabase) : AsyncTask<Context, Void, List<CallLog>>(){
-
-        val listener = listener
-        val database = database
+    private class RetrieveTask(val listener: DataListener<List<CallLog>>, val database: AppDatabase) : AsyncTask<Context, Void, List<CallLog>>(){
 
         override fun doInBackground(vararg params: Context?): List<CallLog> {
-            val allLogs = database.callLogDao().getAllLogs()
-            return allLogs
+            return database.callLogDao().getAllLogs()
         }
 
         override fun onPostExecute(logs: List<CallLog>?) {
