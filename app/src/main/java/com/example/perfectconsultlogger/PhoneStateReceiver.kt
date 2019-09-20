@@ -10,29 +10,37 @@ import com.example.perfectconsultlogger.data.Database
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+
 class PhoneStateReceiver : BroadcastReceiver() {
 
     private val TAG = "PhoneStateReceiver"
+
+    private val owner_number = getOwnerNumber()
+
+    private fun getOwnerNumber(): String {
+        //TODO: obtain phone number
+        return ""
+    }
 
     private var lastState = TelephonyManager.CALL_STATE_IDLE
     private var database: Database? = null
 
     override fun onReceive(context: Context?, intent: Intent?) {
         database = context?.let { Database.getInstance(it) }
-        checkIncoming(intent)
+        checkCall(intent)
     }
 
 
-    private fun checkIncoming(intent: Intent?) {
+    private fun checkCall(intent: Intent?) {
         val state = intent?.getStringExtra(TelephonyManager.EXTRA_STATE)
 
         if (lastState == TelephonyManager.CALL_STATE_IDLE) {
             if (state.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
                 processIncomingCall(intent)
             } else if (state.equals(TelephonyManager.EXTRA_STATE_OFFHOOK)) {
-                //TODO: extract outgoing call number
+                //TODO: extract outgoing call target_number
                 val number = intent?.getStringExtra(Intent.EXTRA_PHONE_NUMBER)
-                Log.d(TAG, "Outgoing number : $number " + intent?.action)
+                Log.d(TAG, "Outgoing target_number : $number " + intent?.action)
             }
         }
         Log.d(TAG, state)
@@ -40,18 +48,19 @@ class PhoneStateReceiver : BroadcastReceiver() {
     }
 
     private fun processIncomingCall(intent: Intent?) {
-        val number = intent?.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
-        //take care of date
-        //TODO: check phone states and obtain start and end time
-        val current = LocalDateTime.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
-        val formatted = current.format(formatter)
-
-        val callLog = number?.let { CallLog(it, formatted, formatted, true) }
+        val targetNumber = intent?.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+        val formatted = obtainTime()
+        val callLog = targetNumber?.let { CallLog("" ,it, formatted, "10m 12s",true) }
         if (callLog != null) {
             database?.insertCallLog(callLog)
         }
-        Log.d(TAG, "Incoming number : $number")
+    }
+
+    private fun obtainTime(): String {
+        //TODO: check phone states and obtain start and end time
+        val current = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
+        return current.format(formatter)
     }
 
     private fun intState(state: String?): Int {

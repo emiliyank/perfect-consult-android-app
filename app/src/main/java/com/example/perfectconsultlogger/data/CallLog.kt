@@ -6,9 +6,10 @@ import android.arch.persistence.room.PrimaryKey
 
 @Entity(tableName = "call_logs")
 class CallLog(
-    @ColumnInfo(name = "phone_number") val number: String,
+    @ColumnInfo(name = "owner_number") val owner_number: String,
+    @ColumnInfo(name = "target_number") val target_number: String,
     @ColumnInfo(name = "start_time") val startTime: String,
-    @ColumnInfo(name = "end_time") val endTime: String,
+    @ColumnInfo(name = "duration") val duration: String,
     @ColumnInfo(name = "is_incoming") val isIncoming: Boolean
 ) {
     @PrimaryKey(autoGenerate = true)
