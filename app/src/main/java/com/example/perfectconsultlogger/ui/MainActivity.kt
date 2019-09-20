@@ -23,20 +23,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewManager: LinearLayoutManager
     private lateinit var logAdapter: CallLogAdapter
     private lateinit var recyclerView: RecyclerView
-    private var allLogs: List<CallLog> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         askForPermissions()
 
-        Database.getInstance(this).getAll(this, object : Database.DataListener<List<CallLog>> {
-            override fun onData(data: List<CallLog>) {
-                allLogs = data
-            }
-        })
-
-        logAdapter = CallLogAdapter(allLogs)
+        logAdapter = CallLogAdapter(mutableListOf())
         viewManager = LinearLayoutManager(this)
         recyclerView = findViewById<RecyclerView>(R.id.rec_call_log).apply {
             setHasFixedSize(true)
@@ -44,6 +37,12 @@ class MainActivity : AppCompatActivity() {
             adapter = logAdapter
 
         }
+
+        Database.getInstance(this).getAll(this, object : Database.DataListener<List<CallLog>> {
+            override fun onData(data: List<CallLog>) {
+                logAdapter.logs = data
+            }
+        })
     }
 
     private fun askForPermissions() {
