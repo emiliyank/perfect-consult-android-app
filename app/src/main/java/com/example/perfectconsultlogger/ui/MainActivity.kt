@@ -20,29 +20,10 @@ class MainActivity : AppCompatActivity() {
     private val PERMISSION_REQUEST_PROCESS_OUTGOING_CALLS = 0
     private val PERMISSION_REQUEST_READ_PHONE_STATE = 1
 
-    private lateinit var viewManager: LinearLayoutManager
-    private lateinit var logAdapter: CallLogAdapter
-    private lateinit var recyclerView: RecyclerView
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         askForPermissions()
-
-        logAdapter = CallLogAdapter(mutableListOf())
-        viewManager = LinearLayoutManager(this)
-        recyclerView = findViewById<RecyclerView>(R.id.rec_call_log).apply {
-            setHasFixedSize(true)
-            layoutManager = viewManager
-            adapter = logAdapter
-
-        }
-
-        Database.getInstance(this).getAll(this, object : Database.DataListener<List<CallLog>> {
-            override fun onData(data: List<CallLog>) {
-                logAdapter.logs = data
-            }
-        })
     }
 
     private fun askForPermissions() {
