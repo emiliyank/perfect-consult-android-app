@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Perfect consult logger</string>
+    <string name="enter_your_phone_number">Enter your phone number</string>
+    <string name="txt_continue">continue</string>
 </resources>
