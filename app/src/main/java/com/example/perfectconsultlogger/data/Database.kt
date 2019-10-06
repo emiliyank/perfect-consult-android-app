@@ -15,10 +15,19 @@ class Database(context: Context) {
         database.callLogDao().dropTable()
     }
 
-    fun insertCallLog(callLog: CallLog) = InsertTask(database).execute(callLog)
+    fun insertCallLog(callLog: CallLog) = CallLogInsertTask(database).execute(callLog)
 
     fun getAll(context: Context, listener: DataListener<List<CallLog>>){
-        RetrieveTask(listener, database).execute(context)
+        CallLogRetrieveTask(listener, database).execute(context)
+    }
+
+    fun getOwnerPhone(): String{
+        return database.settingsDao().getOwnerPhone().value
+    }
+
+    fun setOwnerPhone(value: String){
+        val ownerPhone = Settings("phone", "value")
+        SettingsInsertTask(database).execute(ownerPhone)
     }
 
     companion object {
@@ -32,7 +41,16 @@ class Database(context: Context) {
         }
     }
 
-    private class InsertTask(val database: AppDatabase): AsyncTask<CallLog, Void, Void>(){
+    private class SettingsInsertTask(val database: AppDatabase): AsyncTask<Settings, Void, Void>(){
+        override fun doInBackground(vararg params: Settings?): Void? {
+            params[0]?.let { database.settingsDao().insert(it) }
+            return null
+        }
+
+
+    }
+
+    private class CallLogInsertTask(val database: AppDatabase): AsyncTask<CallLog, Void, Void>(){
 
         override fun doInBackground(vararg params: CallLog?): Void? {
             params[0]?.let { database.callLogDao().insert(it) }
@@ -41,7 +59,7 @@ class Database(context: Context) {
 
     }
 
-    private class RetrieveTask(val listener: DataListener<List<CallLog>>, val database: AppDatabase) : AsyncTask<Context, Void, List<CallLog>>(){
+    private class CallLogRetrieveTask(val listener: DataListener<List<CallLog>>, val database: AppDatabase) : AsyncTask<Context, Void, List<CallLog>>(){
 
         override fun doInBackground(vararg params: Context?): List<CallLog> {
             return database.callLogDao().getAllLogs()
