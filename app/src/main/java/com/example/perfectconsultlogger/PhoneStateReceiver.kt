@@ -3,11 +3,12 @@ package com.example.perfectconsultlogger
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.provider.CallLog
 import android.telephony.TelephonyManager
 import android.util.Log
-import com.example.perfectconsultlogger.data.CallLog
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.Settings
+import java.util.*
 
 class PhoneStateReceiver : BroadcastReceiver() {
 
@@ -17,56 +18,45 @@ class PhoneStateReceiver : BroadcastReceiver() {
     private var database: Database? = null
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        database = context?.let { Database.getInstance(it) }
-        checkCall(intent)
-    }
+        intent?.let {
+            if(it.action == "android.intent.action.PHONE_STATE" || it.action == "android.intent.action.NEW_OUTGOING_CALL") {
+                database = context?.let { Database.getInstance(it) }
 
-    private fun checkCall(intent: Intent?) {
-        val state = intent?.getStringExtra(TelephonyManager.EXTRA_STATE)
-        val timeStamp = System.currentTimeMillis()
-        val eventType = checkEventType(state)
-        val isIncoming = checkIncoming(state)
-        val targetNumber: String? = getTargetNumber(intent)
+                if (lastState == TelephonyManager.CALL_STATE_IDLE) { //Phone call has ended
 
-
-        database?.getOwnerPhone(object : Database.DataListener<Settings> {
-            override fun onData(data: Settings) {
-                val ownerNumber = data.value
-                val callLog = targetNumber?.let { CallLog(ownerNumber, it, timeStamp, eventType, isIncoming) }
-                callLog?.let { addToDatabase(it) }
-            }
-        })
-
-        if(state != null) {
-            Log.d(TAG, "$state other side:$targetNumber")
-        } else {
-            Log.d(TAG, "State is NULL, other side:$targetNumber")
-        }
-    }
-
-    private fun checkIncoming(state: String?): Boolean {
-        if (lastState == TelephonyManager.CALL_STATE_IDLE) {
-            if (state.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
-                return true
+                }
             }
         }
-        return false
     }
 
-    private fun getTargetNumber(intent: Intent?): String? {
-        //works only for incoming calls TODO: make it work for outgoing calls
-        return intent?.extras?.getString(TelephonyManager.EXTRA_INCOMING_NUMBER)
-    }
-
-    private fun checkEventType(state: String?): String {
-        if(lastState == TelephonyManager.CALL_STATE_IDLE){
-            if(state == TelephonyManager.EXTRA_STATE_RINGING || state == TelephonyManager.EXTRA_STATE_OFFHOOK){
-                return "start"
+    private fun getCallDetails(context: Context): String {
+        val sb = StringBuffer();
+        val managedCursor = context.managedQuery(CallLog.Calls.CONTENT_URI, null, null, null, android.provider.CallLog.Calls.DATE + " DESC limit 2;");
+        val number = managedCursor.getColumnIndex(CallLog.Calls.NUMBER);
+        val type = managedCursor.getColumnIndex(CallLog.Calls.TYPE);
+        val date = managedCursor.getColumnIndex(CallLog.Calls.DATE);
+        val duration = managedCursor.getColumnIndex(CallLog.Calls.DURATION);
+        sb.append("Call Log :");
+        while (managedCursor.moveToNext()) {
+            val phNumber = managedCursor.getString(number);
+            val callType = managedCursor.getString(type);
+            val callTimestampText = managedCursor.getString(date);
+            val callDate = Date(callTimestampText.toLong())
+            val callDuration = managedCursor.getString(duration);
+            var callTypeText: String? = null
+            when (Integer.parseInt(callType)) {
+                CallLog.Calls.OUTGOING_TYPE -> callTypeText = "OUTGOING";
+                CallLog.Calls.INCOMING_TYPE -> callTypeText = "INCOMING";
+                CallLog.Calls.MISSED_TYPE -> callTypeText = "MISSED";
+                CallLog.Calls.VOICEMAIL_TYPE -> callTypeText = "VOICEMAIL";
+                CallLog.Calls.REJECTED_TYPE -> callTypeText = "REJECTED";
+                CallLog.Calls.BLOCKED_TYPE -> callTypeText = "BLOCKED";
+                CallLog.Calls.ANSWERED_EXTERNALLY_TYPE -> callTypeText = "EXTERNALLY_ANSWERED";
             }
+            sb.append("\nPhone Number:--- " + phNumber + " \nCall Type:--- " + callTypeText + " \nCall Date:--- " + callDate + " \nCall duration in sec :--- " + callDuration);
+            sb.append("\n----------------------------------");
         }
-        return "end"
+        return sb.toString()
     }
-
-    private fun addToDatabase(callLog: CallLog) = database?.insertCallLog(callLog)
 
 }

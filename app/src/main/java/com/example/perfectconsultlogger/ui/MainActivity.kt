@@ -104,17 +104,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun exportDb() {
-        database.getAll(this, object : Database.DataListener<List<com.example.perfectconsultlogger.data.CallLog>> {
-            override fun onData(data: List<com.example.perfectconsultlogger.data.CallLog>) {
-                val sb = StringBuffer()
-                for (log in data) {
-                    sb.append(log)
-                    sb.append("\n")
-                }
-                txt_database.setText(sb.toString())
-                scroll_database.visibility = View.VISIBLE
-            }
-        })
+//        database.getAll(this, object : Database.DataListener<List<com.example.perfectconsultlogger.data.CallLog>> {
+//            override fun onData(data: List<com.example.perfectconsultlogger.data.CallLog>) {
+//                val sb = StringBuffer()
+//                for (log in data) {
+//                    sb.append(log)
+//                    sb.append("\n")
+//                }
+//                txt_database.setText(sb.toString())
+//                scroll_database.visibility = View.VISIBLE
+//            }
+//        })
     }
 
     private fun getCallDetails(): String {
