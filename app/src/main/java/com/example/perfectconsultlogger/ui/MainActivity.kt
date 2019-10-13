@@ -17,15 +17,18 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import android.content.Context.TELEPHONY_SERVICE
+import android.support.v4.content.ContextCompat.getSystemService
+import android.telephony.TelephonyManager
+import android.annotation.SuppressLint
+import android.content.Context
 
+private const val PERMISSION_REQUEST_PROCESS_OUTGOING_CALLS = 0
+private const val PERMISSION_REQUEST_READ_PHONE_STATE = 1
+private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
 
-    private val PERMISSION_REQUEST_PROCESS_OUTGOING_CALLS = 0
-    private val PERMISSION_REQUEST_READ_PHONE_STATE = 1
-    private val TAG = "MainActivity"
-
-    lateinit var ownerPhone: String
     lateinit var database: Database
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,16 +37,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         askForPermissions()
         btn_continue.setOnClickListener {
-            ownerPhone = edt_phone.text.toString()
-            database.setOwnerPhone(ownerPhone)
+            database.setOwnerPhone(edt_phone.text.toString())
         }
     }
 
     private fun askForPermissions() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.READ_PHONE_STATE
-            )
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
             != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
@@ -51,13 +50,11 @@ class MainActivity : AppCompatActivity() {
                 arrayOf(Manifest.permission.READ_PHONE_STATE),
                 PERMISSION_REQUEST_READ_PHONE_STATE
             )
-
+        } else {
+            retrievePhoneNumber()
         }
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.PROCESS_OUTGOING_CALLS
-            )
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS)
             != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
@@ -65,7 +62,27 @@ class MainActivity : AppCompatActivity() {
                 arrayOf(Manifest.permission.PROCESS_OUTGOING_CALLS),
                 PERMISSION_REQUEST_PROCESS_OUTGOING_CALLS
             )
+        }
+    }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_READ_PHONE_STATE &&
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_PHONE_STATE
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            retrievePhoneNumber()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun retrievePhoneNumber() {
+        val tMgr = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        if(!tMgr.line1Number.isNullOrBlank()) {
+            database.setOwnerPhone(tMgr.line1Number)
+            edt_phone.setText(tMgr.line1Number)
         }
     }
 }

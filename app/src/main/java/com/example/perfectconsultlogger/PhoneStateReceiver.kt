@@ -14,13 +14,6 @@ class PhoneStateReceiver : BroadcastReceiver() {
 
     private val TAG = "PhoneStateReceiver"
 
-    private val owner_number = getOwnerNumber()
-
-    private fun getOwnerNumber(): String {
-        //TODO: obtain phone number
-        return ""
-    }
-
     private var lastState = TelephonyManager.CALL_STATE_IDLE
     private var database: Database? = null
 
