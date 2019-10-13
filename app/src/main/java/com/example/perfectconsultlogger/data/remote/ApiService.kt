@@ -6,5 +6,5 @@ import retrofit2.http.POST
 
 interface ApiService {
     @POST("/call")
-    fun createCallLog(@Body token: String): Call<Void>
+    fun createCallLog(@Body request: CallRequest): Call<Void>
 }

@@ -14,7 +14,7 @@ interface SettingsDao {
     @Query("SELECT * FROM settings")
     fun getAllSettings() : List<Settings>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(setting: Settings): Long
 
     @Query("DELETE FROM settings")

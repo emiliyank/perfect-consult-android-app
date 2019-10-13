@@ -13,6 +13,7 @@ class Database(context: Context) {
 
     fun dropDatabase(){
         database.callLogDao().dropTable()
+        database.settingsDao().dropTable()
     }
 
     fun insertCallLog(callLog: CallLog) = CallLogInsertTask(database).execute(callLog)
@@ -21,12 +22,12 @@ class Database(context: Context) {
         CallLogRetrieveTask(listener, database).execute(context)
     }
 
-    fun getOwnerPhone(): String{
-        return database.settingsDao().getOwnerPhone().value
+    fun getOwnerPhone(listener: DataListener<Settings>){
+        PhoneNumberRetrieveTask(listener, database).execute()
     }
 
     fun setOwnerPhone(value: String){
-        val ownerPhone = Settings("phone", "value")
+        val ownerPhone = Settings("phone", value)
         SettingsInsertTask(database).execute(ownerPhone)
     }
 
@@ -47,6 +48,18 @@ class Database(context: Context) {
             return null
         }
 
+
+    }
+
+    private class PhoneNumberRetrieveTask(val listener: DataListener<Settings>, val database: AppDatabase) : AsyncTask<Void, Void, Settings>(){
+        override fun doInBackground(vararg params: Void?): Settings {
+            return database.settingsDao().getOwnerPhone()
+        }
+
+        override fun onPostExecute(phoneNumber: Settings) {
+            super.onPostExecute(phoneNumber)
+            listener.onData(phoneNumber)
+        }
 
     }
 
