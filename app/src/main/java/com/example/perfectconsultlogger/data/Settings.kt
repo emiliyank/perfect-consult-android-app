@@ -12,4 +12,10 @@ class Settings(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
     var id: Int = 0
+
+
+    companion object {
+        const val OWNER_PHONE = "OWNER_PHONE"
+        const val LAST_SYNCED_CALL_TIMESTAMP = "LAST_SYNCED_CALL_TIMESTAMP"
+    }
 }

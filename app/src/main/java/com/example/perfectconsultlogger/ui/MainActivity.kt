@@ -17,9 +17,7 @@ import android.provider.CallLog
 import com.example.perfectconsultlogger.BuildConfig
 import java.util.*
 
-private const val PERMISSION_REQUEST_PROCESS_OUTGOING_CALLS = 0
 private const val PERMISSION_REQUEST_READ_PHONE_STATE = 1
-private const val PERMISSION_REQUEST_READ_CALL_LOG = 2
 private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
@@ -31,56 +29,41 @@ class MainActivity : AppCompatActivity() {
         database = Database.getInstance(this)
         setContentView(R.layout.activity_main)
         askForPermissions()
+        setLastCallTimestamp()
         btn_continue.setOnClickListener {
             database.setOwnerPhone(edt_phone.text.toString())
         }
         setupDebugOptions()
     }
 
+    private fun setLastCallTimestamp() {
+        database.getLastSyncedCallTimestamp(object: Database.DataListener<Long> {
+            override fun onData(data: Long) {
+                if(data == 0L) {
+                    database.setLastSyncedCallTimestamp(System.currentTimeMillis())
+                }
+            }
+        })
+    }
+
     private fun askForPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
-            != PackageManager.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS) != PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(Manifest.permission.READ_PHONE_STATE),
+                arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.PROCESS_OUTGOING_CALLS, Manifest.permission.READ_CALL_LOG),
                 PERMISSION_REQUEST_READ_PHONE_STATE
             )
         } else {
             retrievePhoneNumber()
         }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.PROCESS_OUTGOING_CALLS),
-                PERMISSION_REQUEST_PROCESS_OUTGOING_CALLS
-            )
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.READ_CALL_LOG),
-                PERMISSION_REQUEST_READ_CALL_LOG
-            )
-        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_READ_PHONE_STATE &&
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.READ_PHONE_STATE
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            retrievePhoneNumber()
-        }
+        askForPermissions()
     }
 
     @SuppressLint("MissingPermission")
@@ -96,30 +79,16 @@ class MainActivity : AppCompatActivity() {
         if (BuildConfig.DEBUG) {
             btn_export_database.visibility = View.VISIBLE
             btn_export_database.setOnClickListener {
-//                exportDb()
                 txt_database.setText(getCallDetails())
                 scroll_database.visibility = View.VISIBLE
             }
         }
     }
 
-    private fun exportDb() {
-        database.getAll(this, object : Database.DataListener<List<com.example.perfectconsultlogger.data.CallLog>> {
-            override fun onData(data: List<com.example.perfectconsultlogger.data.CallLog>) {
-                val sb = StringBuffer()
-                for (log in data) {
-                    sb.append(log)
-                    sb.append("\n")
-                }
-                txt_database.setText(sb.toString())
-                scroll_database.visibility = View.VISIBLE
-            }
-        })
-    }
-
+    @SuppressLint("MissingPermission")
     private fun getCallDetails(): String {
         val sb = StringBuffer();
-        val managedCursor = managedQuery(CallLog.Calls.CONTENT_URI, null, null, null, android.provider.CallLog.Calls.DATE + " DESC limit 2;");
+        val managedCursor = contentResolver.query(CallLog.Calls.CONTENT_URI, null, null, null, android.provider.CallLog.Calls.DATE + " DESC limit 2;");
         val number = managedCursor.getColumnIndex(CallLog.Calls.NUMBER);
         val type = managedCursor.getColumnIndex(CallLog.Calls.TYPE);
         val date = managedCursor.getColumnIndex(CallLog.Calls.DATE);
@@ -144,6 +113,7 @@ class MainActivity : AppCompatActivity() {
             sb.append("\nPhone Number:--- " + phNumber + " \nCall Type:--- " + callTypeText + " \nCall Date:--- " + callDate + " \nCall duration in sec :--- " + callDuration);
             sb.append("\n----------------------------------");
         }
+        managedCursor.close()
         return sb.toString()
     }
 }

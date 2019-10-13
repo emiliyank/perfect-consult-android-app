@@ -8,29 +8,6 @@ class Database(context: Context) {
 
     private val TAG = "Database"
 
-    private val database: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "app-db")
-        .fallbackToDestructiveMigration().build()
-
-    fun dropDatabase(){
-        database.callLogDao().dropTable()
-        database.settingsDao().dropTable()
-    }
-
-    fun insertCallLog(callLog: CallLog) = CallLogInsertTask(database).execute(callLog)
-
-    fun getAll(context: Context, listener: DataListener<List<CallLog>>){
-        CallLogRetrieveTask(listener, database).execute(context)
-    }
-
-    fun getOwnerPhone(listener: DataListener<Settings>){
-        PhoneNumberRetrieveTask(listener, database).execute()
-    }
-
-    fun setOwnerPhone(value: String){
-        val ownerPhone = Settings("phone", value)
-        SettingsInsertTask(database).execute(ownerPhone)
-    }
-
     companion object {
         private var instance: Database? = null
 
@@ -42,49 +19,55 @@ class Database(context: Context) {
         }
     }
 
-    private class SettingsInsertTask(val database: AppDatabase): AsyncTask<Settings, Void, Void>(){
+    private val database: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "app-db")
+        .fallbackToDestructiveMigration().build()
+
+    fun getLastSyncedCallTimestamp(listener: DataListener<Long>) {
+        SettingRetrieveTask(Settings.OWNER_PHONE, database, object : DataListener<Settings?> {
+            override fun onData(settings: Settings?) {
+                listener.onData(settings?.value?.toLong() ?: 0L)
+            }
+        }).execute()
+    }
+
+    fun setLastSyncedCallTimestamp(value: Long) {
+        val ownerPhone = Settings(Settings.OWNER_PHONE, value.toString())
+        SettingsInsertTask(database).execute(ownerPhone)
+    }
+
+    fun getOwnerPhone(listener: DataListener<String>) {
+        SettingRetrieveTask(Settings.OWNER_PHONE, database, object : DataListener<Settings?> {
+            override fun onData(settings: Settings?) {
+                listener.onData(settings?.value ?: "")
+            }
+        }).execute()
+    }
+
+    fun setOwnerPhone(value: String) {
+        val ownerPhone = Settings(Settings.OWNER_PHONE, value)
+        SettingsInsertTask(database).execute(ownerPhone)
+    }
+
+    private class SettingsInsertTask(val database: AppDatabase) : AsyncTask<Settings, Void, Void>() {
         override fun doInBackground(vararg params: Settings?): Void? {
             params[0]?.let { database.settingsDao().insert(it) }
             return null
         }
-
-
     }
 
-    private class PhoneNumberRetrieveTask(val listener: DataListener<Settings>, val database: AppDatabase) : AsyncTask<Void, Void, Settings>(){
-        override fun doInBackground(vararg params: Void?): Settings {
-            return database.settingsDao().getOwnerPhone()
+    private class SettingRetrieveTask(
+        val setting: String,
+        val database: AppDatabase,
+        val listener: DataListener<Settings?>
+    ) : AsyncTask<Void, Void, Settings?>() {
+        override fun doInBackground(vararg params: Void?): Settings? {
+            return database.settingsDao().getSetting(setting)
         }
 
-        override fun onPostExecute(phoneNumber: Settings) {
+        override fun onPostExecute(phoneNumber: Settings?) {
             super.onPostExecute(phoneNumber)
             listener.onData(phoneNumber)
         }
-
-    }
-
-    private class CallLogInsertTask(val database: AppDatabase): AsyncTask<CallLog, Void, Void>(){
-
-        override fun doInBackground(vararg params: CallLog?): Void? {
-            params[0]?.let { database.callLogDao().insert(it) }
-            return null
-        }
-
-    }
-
-    private class CallLogRetrieveTask(val listener: DataListener<List<CallLog>>, val database: AppDatabase) : AsyncTask<Context, Void, List<CallLog>>(){
-
-        override fun doInBackground(vararg params: Context?): List<CallLog> {
-            return database.callLogDao().getAllLogs()
-        }
-
-        override fun onPostExecute(logs: List<CallLog>?) {
-            super.onPostExecute(logs)
-            if (logs != null) {
-                listener.onData(logs)
-            }
-        }
-
     }
 
     interface DataListener<T> {

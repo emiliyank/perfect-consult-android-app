@@ -1,72 +1,96 @@
 package com.example.perfectconsultlogger
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.provider.CallLog
+import android.support.v4.content.ContextCompat
 import android.telephony.TelephonyManager
-import android.util.Log
-import com.example.perfectconsultlogger.data.CallLog
+import com.example.perfectconsultlogger.data.CallDetails
 import com.example.perfectconsultlogger.data.Database
-import com.example.perfectconsultlogger.data.Settings
+import kotlin.collections.ArrayList
 
 class PhoneStateReceiver : BroadcastReceiver() {
 
     private val TAG = "PhoneStateReceiver"
 
-    private var lastState = TelephonyManager.CALL_STATE_IDLE
-    private var database: Database? = null
-
     override fun onReceive(context: Context?, intent: Intent?) {
-        database = context?.let { Database.getInstance(it) }
-        checkCall(intent)
+        val nonNullIntent = intent ?: return
+        val nonNullContext = context ?: return
+        val database = Database.getInstance(nonNullContext)
+        if (nonNullIntent.action == "android.intent.action.PHONE_STATE" || nonNullIntent.action == "android.intent.action.NEW_OUTGOING_CALL") {
+            //TODO read state if (state == TelephonyManager.CALL_STATE_IDLE) { //Phone call has ended
+                if (ContextCompat.checkSelfPermission(nonNullContext, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
+                    syncUnsyncedCalls(database, nonNullContext)
+                } else {
+                    //TODO notify server for no permission granted
+                }
+//            }
+        }
+
     }
 
-    private fun checkCall(intent: Intent?) {
-        val state = intent?.getStringExtra(TelephonyManager.EXTRA_STATE)
-        val timeStamp = System.currentTimeMillis()
-        val eventType = checkEventType(state)
-        val isIncoming = checkIncoming(state)
-        val targetNumber: String? = getTargetNumber(intent)
-
-
-        database?.getOwnerPhone(object : Database.DataListener<Settings> {
-            override fun onData(data: Settings) {
-                val ownerNumber = data.value
-                val callLog = targetNumber?.let { CallLog(ownerNumber, it, timeStamp, eventType, isIncoming) }
-                callLog?.let { addToDatabase(it) }
+    private fun syncUnsyncedCalls(
+        database: Database,
+        nonNullContext: Context
+    ) {
+        database.getLastSyncedCallTimestamp(object : Database.DataListener<Long> {
+            override fun onData(lastSyncedCallTimestamp: Long) {
+                val unsyncedCalls = getUnsyncedCalls(nonNullContext, lastSyncedCallTimestamp)
+                var latestSyncedCallTimestamp = 0L
+                for (call in unsyncedCalls) {
+                    if (syncCall(call)) {
+                        latestSyncedCallTimestamp = call.callStartTimestamp
+                    } else {
+                        break
+                    }
+                }
+                database.setLastSyncedCallTimestamp(latestSyncedCallTimestamp)
             }
         })
-
-        if(state != null) {
-            Log.d(TAG, "$state other side:$targetNumber")
-        } else {
-            Log.d(TAG, "State is NULL, other side:$targetNumber")
-        }
     }
 
-    private fun checkIncoming(state: String?): Boolean {
-        if (lastState == TelephonyManager.CALL_STATE_IDLE) {
-            if (state.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
-                return true
+    private fun syncCall(call: CallDetails): Boolean {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    private fun getUnsyncedCalls(context: Context, sinceTimestamp: Long): List<CallDetails> {
+        val unsyncedCalls = ArrayList<CallDetails>()
+        val managedCursor = context.contentResolver.query(
+            CallLog.Calls.CONTENT_URI,
+            null,
+            android.provider.CallLog.Calls.DATE + " >= ?",
+            arrayOf(sinceTimestamp.toString()),
+            android.provider.CallLog.Calls.DATE
+        );
+        val number = managedCursor.getColumnIndex(CallLog.Calls.NUMBER);
+        val type = managedCursor.getColumnIndex(CallLog.Calls.TYPE);
+        val date = managedCursor.getColumnIndex(CallLog.Calls.DATE);
+        val duration = managedCursor.getColumnIndex(CallLog.Calls.DURATION);
+
+        while (managedCursor.moveToNext()) {
+            var callTypeText = ""
+            when (Integer.parseInt(managedCursor.getString(type))) {
+                CallLog.Calls.OUTGOING_TYPE -> callTypeText = "OUTGOING";
+                CallLog.Calls.INCOMING_TYPE -> callTypeText = "INCOMING";
+                CallLog.Calls.MISSED_TYPE -> callTypeText = "MISSED";
+                CallLog.Calls.VOICEMAIL_TYPE -> callTypeText = "VOICEMAIL";
+                CallLog.Calls.REJECTED_TYPE -> callTypeText = "REJECTED";
+                CallLog.Calls.BLOCKED_TYPE -> callTypeText = "BLOCKED";
+                CallLog.Calls.ANSWERED_EXTERNALLY_TYPE -> callTypeText = "EXTERNALLY_ANSWERED";
             }
+            unsyncedCalls.add(
+                CallDetails(
+                    managedCursor.getString(number),
+                    callTypeText,
+                    managedCursor.getString(date).toLong(),
+                    managedCursor.getString(duration).toLong()
+                )
+            )
         }
-        return false
+        return unsyncedCalls
     }
-
-    private fun getTargetNumber(intent: Intent?): String? {
-        //works only for incoming calls TODO: make it work for outgoing calls
-        return intent?.extras?.getString(TelephonyManager.EXTRA_INCOMING_NUMBER)
-    }
-
-    private fun checkEventType(state: String?): String {
-        if(lastState == TelephonyManager.CALL_STATE_IDLE){
-            if(state == TelephonyManager.EXTRA_STATE_RINGING || state == TelephonyManager.EXTRA_STATE_OFFHOOK){
-                return "start"
-            }
-        }
-        return "end"
-    }
-
-    private fun addToDatabase(callLog: CallLog) = database?.insertCallLog(callLog)
 
 }

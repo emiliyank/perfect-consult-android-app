@@ -20,6 +20,6 @@ interface SettingsDao {
     @Query("DELETE FROM settings")
     fun deleteAll()
 
-    @Query("SELECT * FROM settings WHERE `key`='phone'")
-    fun getOwnerPhone(): Settings
+    @Query("SELECT * FROM settings WHERE `key`=:settingName")
+    fun getSetting(settingName: String): Settings
 }
