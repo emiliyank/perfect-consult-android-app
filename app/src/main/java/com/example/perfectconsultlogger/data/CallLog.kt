@@ -3,6 +3,7 @@ package com.example.perfectconsultlogger.data
 import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
+import java.util.*
 
 public const val CALL_TYPE_START = "call type start"
 public const val CALL_TYPE_END = "call type end"
@@ -18,4 +19,11 @@ class CallLog(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
     var id: Int = 0
+
+    override fun toString(): String {
+        return Date(timeStamp).toString() +
+                "target_number='$target_number', callEventType='$callEventType', isIncoming=$isIncoming \n"
+    }
+
+
 }

@@ -7,8 +7,7 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import com.example.perfectconsultlogger.data.CallLog
 import com.example.perfectconsultlogger.data.Database
-import java.util.*
-
+import com.example.perfectconsultlogger.data.Settings
 
 class PhoneStateReceiver : BroadcastReceiver() {
 
@@ -22,32 +21,52 @@ class PhoneStateReceiver : BroadcastReceiver() {
         checkCall(intent)
     }
 
-
     private fun checkCall(intent: Intent?) {
         val state = intent?.getStringExtra(TelephonyManager.EXTRA_STATE)
-        var targetNumber: String? = null
-        var timeStamp = 0L
-        var eventType = checkEventType(state)
-        var isIncoming = false
+        val timeStamp = System.currentTimeMillis()
+        val eventType = checkEventType(state)
+        val isIncoming = checkIncoming(state)
+        val targetNumber: String? = getTargetNumber(intent)
 
-        lastState = intState(state)
-        val callLog = targetNumber?.let { CallLog("", it, timeStamp, eventType, isIncoming) }
-        callLog?.let { addToDatabase(it) }
+
+        database?.getOwnerPhone(object : Database.DataListener<Settings> {
+            override fun onData(data: Settings) {
+                val ownerNumber = data.value
+                val callLog = targetNumber?.let { CallLog(ownerNumber, it, timeStamp, eventType, isIncoming) }
+                callLog?.let { addToDatabase(it) }
+            }
+        })
+
+        if(state != null) {
+            Log.d(TAG, "$state other side:$targetNumber")
+        } else {
+            Log.d(TAG, "State is NULL, other side:$targetNumber")
+        }
+    }
+
+    private fun checkIncoming(state: String?): Boolean {
+        if (lastState == TelephonyManager.CALL_STATE_IDLE) {
+            if (state.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun getTargetNumber(intent: Intent?): String? {
+        //works only for incoming calls TODO: make it work for outgoing calls
+        return intent?.extras?.getString(TelephonyManager.EXTRA_INCOMING_NUMBER)
     }
 
     private fun checkEventType(state: String?): String {
-        //TODO: implement
-        return ""
+        if(lastState == TelephonyManager.CALL_STATE_IDLE){
+            if(state == TelephonyManager.EXTRA_STATE_RINGING || state == TelephonyManager.EXTRA_STATE_OFFHOOK){
+                return "start"
+            }
+        }
+        return "end"
     }
 
     private fun addToDatabase(callLog: CallLog) = database?.insertCallLog(callLog)
 
-    private fun intState(state: String?): Int {
-        return when {
-            state.equals(TelephonyManager.EXTRA_STATE_OFFHOOK) -> TelephonyManager.CALL_STATE_OFFHOOK
-            state.equals(TelephonyManager.EXTRA_STATE_IDLE) -> TelephonyManager.CALL_STATE_IDLE
-            state.equals(TelephonyManager.EXTRA_STATE_RINGING) -> TelephonyManager.CALL_STATE_RINGING
-            else -> -1
-        }
-    }
 }
