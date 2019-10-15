@@ -1,6 +1,7 @@
 package com.example.perfectconsultlogger
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -10,6 +11,10 @@ import android.support.v4.content.ContextCompat
 import android.telephony.TelephonyManager
 import com.example.perfectconsultlogger.data.CallDetails
 import com.example.perfectconsultlogger.data.Database
+import com.example.perfectconsultlogger.data.remote.ApiWrapper
+import com.example.perfectconsultlogger.data.remote.CallRequest
+import okhttp3.ResponseBody
+import java.util.*
 import kotlin.collections.ArrayList
 
 class PhoneStateReceiver : BroadcastReceiver() {
@@ -20,14 +25,15 @@ class PhoneStateReceiver : BroadcastReceiver() {
         val nonNullIntent = intent ?: return
         val nonNullContext = context ?: return
         val database = Database.getInstance(nonNullContext)
+        val state = intent.extras.getString(TelephonyManager.EXTRA_STATE)
         if (nonNullIntent.action == "android.intent.action.PHONE_STATE" || nonNullIntent.action == "android.intent.action.NEW_OUTGOING_CALL") {
-            //TODO read state if (state == TelephonyManager.CALL_STATE_IDLE) { //Phone call has ended
+            if(state == TelephonyManager.EXTRA_STATE_IDLE) { //Phone call has ended
                 if (ContextCompat.checkSelfPermission(nonNullContext, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
                     syncUnsyncedCalls(database, nonNullContext)
                 } else {
                     //TODO notify server for no permission granted
                 }
-//            }
+            }
         }
 
     }
@@ -38,24 +44,36 @@ class PhoneStateReceiver : BroadcastReceiver() {
     ) {
         database.getLastSyncedCallTimestamp(object : Database.DataListener<Long> {
             override fun onData(lastSyncedCallTimestamp: Long) {
-                val unsyncedCalls = getUnsyncedCalls(nonNullContext, lastSyncedCallTimestamp)
-                var latestSyncedCallTimestamp = 0L
-                for (call in unsyncedCalls) {
-                    if (syncCall(call)) {
-                        latestSyncedCallTimestamp = call.callStartTimestamp
-                    } else {
-                        break
+                database.getOwnerPhone(object: Database.DataListener<String>{
+                    override fun onData(phoneNumber: String) {
+                        val unsyncedCalls = getUnsyncedCalls(nonNullContext, lastSyncedCallTimestamp)
+                        var latestSyncedCallTimestamp = 0L
+                        for (call in unsyncedCalls) {
+                            if (syncCall(call, phoneNumber)) {
+                                latestSyncedCallTimestamp = call.callStartTimestamp
+                            } else {
+                                break
+                            }
+                        }
+                        database.setLastSyncedCallTimestamp(latestSyncedCallTimestamp)
                     }
-                }
-                database.setLastSyncedCallTimestamp(latestSyncedCallTimestamp)
+                })
             }
         })
     }
 
-    private fun syncCall(call: CallDetails): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    private fun syncCall(call: CallDetails, ownerNumber: String): Boolean {
+        val apiWrapper = ApiWrapper()
+        val otherNumber = call.phoneNumber
+        val startTimestamp = call.callStartTimestamp
+        val duration = call.callDuration
+        val callType = call.callType
+        val callRequest = CallRequest(ownerNumber, otherNumber, Date(startTimestamp).toString(), duration, callType)
+        //TODO: switch to another thread
+        return apiWrapper.createCallLog(callRequest)
     }
 
+    @SuppressLint("MissingPermission")
     private fun getUnsyncedCalls(context: Context, sinceTimestamp: Long): List<CallDetails> {
         val unsyncedCalls = ArrayList<CallDetails>()
         val managedCursor = context.contentResolver.query(

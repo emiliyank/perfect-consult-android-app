@@ -50,10 +50,11 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED
             || ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS) != PackageManager.PERMISSION_GRANTED
             || ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.PROCESS_OUTGOING_CALLS, Manifest.permission.READ_CALL_LOG),
+                arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.PROCESS_OUTGOING_CALLS, Manifest.permission.READ_CALL_LOG, Manifest.permission.INTERNET),
                 PERMISSION_REQUEST_READ_PHONE_STATE
             )
         } else {
@@ -89,28 +90,28 @@ class MainActivity : AppCompatActivity() {
     private fun getCallDetails(): String {
         val sb = StringBuffer();
         val managedCursor = contentResolver.query(CallLog.Calls.CONTENT_URI, null, null, null, android.provider.CallLog.Calls.DATE + " DESC limit 2;");
-        val number = managedCursor.getColumnIndex(CallLog.Calls.NUMBER);
-        val type = managedCursor.getColumnIndex(CallLog.Calls.TYPE);
-        val date = managedCursor.getColumnIndex(CallLog.Calls.DATE);
-        val duration = managedCursor.getColumnIndex(CallLog.Calls.DURATION);
-        sb.append("Call Log :");
+        val number = managedCursor.getColumnIndex(CallLog.Calls.NUMBER)
+        val type = managedCursor.getColumnIndex(CallLog.Calls.TYPE)
+        val date = managedCursor.getColumnIndex(CallLog.Calls.DATE)
+        val duration = managedCursor.getColumnIndex(CallLog.Calls.DURATION)
+        sb.append("Call Log :")
         while (managedCursor.moveToNext()) {
-            val phNumber = managedCursor.getString(number);
-            val callType = managedCursor.getString(type);
-            val callTimestampText = managedCursor.getString(date);
+            val phNumber = managedCursor.getString(number)
+            val callType = managedCursor.getString(type)
+            val callTimestampText = managedCursor.getString(date)
             val callDate = Date(callTimestampText.toLong())
-            val callDuration = managedCursor.getString(duration);
+            val callDuration = managedCursor.getString(duration)
             var callTypeText: String? = null
             when (Integer.parseInt(callType)) {
-                CallLog.Calls.OUTGOING_TYPE -> callTypeText = "OUTGOING";
-                CallLog.Calls.INCOMING_TYPE -> callTypeText = "INCOMING";
-                CallLog.Calls.MISSED_TYPE -> callTypeText = "MISSED";
-                CallLog.Calls.VOICEMAIL_TYPE -> callTypeText = "VOICEMAIL";
-                CallLog.Calls.REJECTED_TYPE -> callTypeText = "REJECTED";
-                CallLog.Calls.BLOCKED_TYPE -> callTypeText = "BLOCKED";
-                CallLog.Calls.ANSWERED_EXTERNALLY_TYPE -> callTypeText = "EXTERNALLY_ANSWERED";
+                CallLog.Calls.OUTGOING_TYPE -> callTypeText = "OUTGOING"
+                CallLog.Calls.INCOMING_TYPE -> callTypeText = "INCOMING"
+                CallLog.Calls.MISSED_TYPE -> callTypeText = "MISSED"
+                CallLog.Calls.VOICEMAIL_TYPE -> callTypeText = "VOICEMAIL"
+                CallLog.Calls.REJECTED_TYPE -> callTypeText = "REJECTED"
+                CallLog.Calls.BLOCKED_TYPE -> callTypeText = "BLOCKED"
+                CallLog.Calls.ANSWERED_EXTERNALLY_TYPE -> callTypeText = "EXTERNALLY_ANSWERED"
             }
-            sb.append("\nPhone Number:--- " + phNumber + " \nCall Type:--- " + callTypeText + " \nCall Date:--- " + callDate + " \nCall duration in sec :--- " + callDuration);
+            sb.append("\nPhone Number:--- $phNumber \nCall Type:--- $callTypeText \nCall Date:--- $callDate \nCall duration in sec :--- $callDuration");
             sb.append("\n----------------------------------");
         }
         managedCursor.close()

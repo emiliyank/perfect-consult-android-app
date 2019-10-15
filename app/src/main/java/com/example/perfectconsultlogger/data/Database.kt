@@ -23,7 +23,7 @@ class Database(context: Context) {
         .fallbackToDestructiveMigration().build()
 
     fun getLastSyncedCallTimestamp(listener: DataListener<Long>) {
-        SettingRetrieveTask(Settings.OWNER_PHONE, database, object : DataListener<Settings?> {
+        SettingRetrieveTask(Settings.LAST_SYNCED_CALL_TIMESTAMP, database, object : DataListener<Settings?> {
             override fun onData(settings: Settings?) {
                 listener.onData(settings?.value?.toLong() ?: 0L)
             }
@@ -31,8 +31,8 @@ class Database(context: Context) {
     }
 
     fun setLastSyncedCallTimestamp(value: Long) {
-        val ownerPhone = Settings(Settings.OWNER_PHONE, value.toString())
-        SettingsInsertTask(database).execute(ownerPhone)
+        val timestamp = Settings(Settings.LAST_SYNCED_CALL_TIMESTAMP, value.toString())
+        SettingsInsertTask(database).execute(timestamp)
     }
 
     fun getOwnerPhone(listener: DataListener<String>) {
