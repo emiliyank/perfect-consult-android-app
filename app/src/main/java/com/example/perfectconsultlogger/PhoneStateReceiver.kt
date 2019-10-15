@@ -28,14 +28,14 @@ class PhoneStateReceiver : BroadcastReceiver() {
         val database = Database.getInstance(nonNullContext)
         val state = intent.extras.getString(TelephonyManager.EXTRA_STATE)
         if (nonNullIntent.action == "android.intent.action.PHONE_STATE" || nonNullIntent.action == "android.intent.action.NEW_OUTGOING_CALL") {
-            if(state == TelephonyManager.EXTRA_STATE_IDLE) { //Phone call has ended
-                if (ContextCompat.checkSelfPermission(nonNullContext, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
-                    SyncTask(object: SyncListener{
-                        override fun onSync() {
-                            syncUnsyncedCalls(database, nonNullContext)
-                        }
+            if (state == TelephonyManager.EXTRA_STATE_IDLE) { //Phone call has ended
+                if (ContextCompat.checkSelfPermission(
+                        nonNullContext,
+                        Manifest.permission.READ_CALL_LOG
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    syncUnsyncedCalls(database, nonNullContext)
 
-                    }).execute()
                 } else {
                     //TODO notify server for no permission granted
                 }
@@ -50,16 +50,14 @@ class PhoneStateReceiver : BroadcastReceiver() {
     ) {
         database.getLastSyncedCallTimestamp(object : Database.DataListener<Long> {
             override fun onData(lastSyncedCallTimestamp: Long) {
-                database.getOwnerPhone(object: Database.DataListener<String>{
+                database.getOwnerPhone(object : Database.DataListener<String> {
                     override fun onData(phoneNumber: String) {
                         val unsyncedCalls = getUnsyncedCalls(nonNullContext, lastSyncedCallTimestamp)
                         var latestSyncedCallTimestamp = 0L
                         for (call in unsyncedCalls) {
-                            if (syncCall(call, phoneNumber)) {
-                                latestSyncedCallTimestamp = call.callStartTimestamp
-                            } else {
-                                break
-                            }
+                            syncCall(call, phoneNumber)
+                            latestSyncedCallTimestamp = call.callStartTimestamp
+
                         }
                         database.setLastSyncedCallTimestamp(latestSyncedCallTimestamp)
                     }
@@ -68,15 +66,14 @@ class PhoneStateReceiver : BroadcastReceiver() {
         })
     }
 
-    private fun syncCall(call: CallDetails, ownerNumber: String): Boolean {
+    private fun syncCall(call: CallDetails, ownerNumber: String) {
         val apiWrapper = ApiWrapper()
         val otherNumber = call.phoneNumber
         val startTimestamp = call.callStartTimestamp
         val duration = call.callDuration
         val callType = call.callType
         val callRequest = CallRequest(ownerNumber, otherNumber, Date(startTimestamp).toString(), duration, callType)
-        //TODO: switch to another thread
-        return apiWrapper.createCallLog(callRequest)
+        apiWrapper.createCallLogAsync(callRequest)
     }
 
     @SuppressLint("MissingPermission")
@@ -115,17 +112,5 @@ class PhoneStateReceiver : BroadcastReceiver() {
             )
         }
         return unsyncedCalls
-    }
-
-    class SyncTask(val listener: SyncListener): AsyncTask<Void, Void, Void>(){
-        override fun doInBackground(vararg params: Void?): Void? {
-            listener.onSync()
-            return null
-        }
-
-    }
-
-    interface SyncListener {
-        fun onSync()
     }
 }
