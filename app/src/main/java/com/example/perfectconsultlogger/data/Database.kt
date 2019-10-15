@@ -64,9 +64,9 @@ class Database(context: Context) {
             return database.settingsDao().getSetting(setting)
         }
 
-        override fun onPostExecute(phoneNumber: Settings?) {
-            super.onPostExecute(phoneNumber)
-            listener.onData(phoneNumber)
+        override fun onPostExecute(setting: Settings?) {
+            super.onPostExecute(setting)
+            listener.onData(setting)
         }
     }
 

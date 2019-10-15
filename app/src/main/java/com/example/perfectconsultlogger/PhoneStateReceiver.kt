@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.AsyncTask
 import android.provider.CallLog
 import android.support.v4.content.ContextCompat
 import android.telephony.TelephonyManager
@@ -29,7 +30,12 @@ class PhoneStateReceiver : BroadcastReceiver() {
         if (nonNullIntent.action == "android.intent.action.PHONE_STATE" || nonNullIntent.action == "android.intent.action.NEW_OUTGOING_CALL") {
             if(state == TelephonyManager.EXTRA_STATE_IDLE) { //Phone call has ended
                 if (ContextCompat.checkSelfPermission(nonNullContext, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
-                    syncUnsyncedCalls(database, nonNullContext)
+                    SyncTask(object: SyncListener{
+                        override fun onSync() {
+                            syncUnsyncedCalls(database, nonNullContext)
+                        }
+
+                    }).execute()
                 } else {
                     //TODO notify server for no permission granted
                 }
@@ -111,4 +117,15 @@ class PhoneStateReceiver : BroadcastReceiver() {
         return unsyncedCalls
     }
 
+    class SyncTask(val listener: SyncListener): AsyncTask<Void, Void, Void>(){
+        override fun doInBackground(vararg params: Void?): Void? {
+            listener.onSync()
+            return null
+        }
+
+    }
+
+    interface SyncListener {
+        fun onSync()
+    }
 }
