@@ -6,15 +6,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.AsyncTask
 import android.provider.CallLog
 import android.support.v4.content.ContextCompat
 import android.telephony.TelephonyManager
 import com.example.perfectconsultlogger.data.CallDetails
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
-import com.example.perfectconsultlogger.data.remote.CallRequest
-import okhttp3.ResponseBody
+import com.example.perfectconsultlogger.data.remote.models.CallRequest
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -72,7 +70,13 @@ class PhoneStateReceiver : BroadcastReceiver() {
         val startTimestamp = call.callStartTimestamp
         val duration = call.callDuration
         val callType = call.callType
-        val callRequest = CallRequest(ownerNumber, otherNumber, Date(startTimestamp).toString(), duration, callType)
+        val callRequest = CallRequest(
+            ownerNumber,
+            otherNumber,
+            Date(startTimestamp).toString(),
+            duration,
+            callType
+        )
         apiWrapper.createCallLogAsync(callRequest)
     }
 

@@ -15,6 +15,7 @@ class Settings(
 
 
     companion object {
+        const val USER_TOKEN = "USER_TOKEN"
         const val OWNER_PHONE = "OWNER_PHONE"
         const val LAST_SYNCED_CALL_TIMESTAMP = "LAST_SYNCED_CALL_TIMESTAMP"
     }

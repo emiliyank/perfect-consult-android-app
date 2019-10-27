@@ -48,6 +48,23 @@ class Database(context: Context) {
         SettingsInsertTask(database).execute(ownerPhone)
     }
 
+    fun getUserToken(listener: DataListener<String>) {
+        SettingRetrieveTask(Settings.USER_TOKEN, database, object : DataListener<Settings?> {
+            override fun onData(settings: Settings?) {
+                listener.onData(settings?.value ?: "")
+            }
+        }).execute()
+    }
+
+    fun deleteUserData() {
+        database.settingsDao().deleteAll()
+    }
+
+    fun setUserToken(value: String) {
+        val ownerPhone = Settings(Settings.USER_TOKEN, value)
+        SettingsInsertTask(database).execute(ownerPhone)
+    }
+
     private class SettingsInsertTask(val database: AppDatabase) : AsyncTask<Settings, Void, Void>() {
         override fun doInBackground(vararg params: Settings?): Void? {
             params[0]?.let { database.settingsDao().insert(it) }

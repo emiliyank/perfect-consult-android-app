@@ -2,4 +2,11 @@
     <string name="app_name">Perfect consult logger</string>
     <string name="enter_your_phone_number">Enter your phone number</string>
     <string name="txt_continue">continue</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="email_address">Email Address</string>
+    <string name="perfect_consult_logo">Perfect Consult Logo</string>
+    <string name="error_field_mandatory">Field is mandatory</string>
+    <string name="error_bad_format_email">Bad email format</string>
+    <string name="error_password_short">Password too short</string>
 </resources>
