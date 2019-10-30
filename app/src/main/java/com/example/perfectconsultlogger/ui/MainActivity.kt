@@ -1,21 +1,24 @@
 package com.example.perfectconsultlogger.ui
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.CallLog
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import android.support.v7.app.AppCompatActivity
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
+import com.example.perfectconsultlogger.BuildConfig
 import com.example.perfectconsultlogger.R
 import com.example.perfectconsultlogger.data.Database
+import com.example.perfectconsultlogger.data.remote.ApiWrapper
 import kotlinx.android.synthetic.main.activity_main.*
-import android.telephony.TelephonyManager
-import android.annotation.SuppressLint
-import android.content.Context
-import android.provider.CallLog
-import com.example.perfectconsultlogger.BuildConfig
 import java.util.*
+
 
 private const val PERMISSION_REQUEST_READ_PHONE_STATE = 1
 private const val TAG = "MainActivity"
@@ -30,9 +33,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         askForPermissions()
         setLastCallTimestamp()
-        btn_continue.setOnClickListener {
-            database.setOwnerPhone(edt_phone.text.toString())
-        }
         setupDebugOptions()
     }
 
@@ -46,34 +46,61 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val inflater = menuInflater
+        inflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.item_logout -> {
+                logout()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun logout() {
+        ApiWrapper.getInstance(this).logoutWithToken(object: ApiWrapper.Callback<Boolean> {
+            override fun onDataReceived(data: Boolean) {
+                if(data) {
+                    database.deleteUserData()
+                    finish()
+                } else {
+                    showError(getString(R.string.logout_unsuccessful))
+                }
+            }
+
+            override fun onError(error: String) {
+                showError(getString(R.string.logout_unsuccessful))
+            }
+        })
+    }
+
+    private fun showError(error: String) {
+        Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+    }
+
     private fun askForPermissions() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED
             || ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS) != PackageManager.PERMISSION_GRANTED
             || ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED
             || ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.PROCESS_OUTGOING_CALLS, Manifest.permission.READ_CALL_LOG, Manifest.permission.INTERNET),
+                arrayOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_PHONE_STATE, Manifest.permission.PROCESS_OUTGOING_CALLS, Manifest.permission.READ_CALL_LOG, Manifest.permission.INTERNET),
                 PERMISSION_REQUEST_READ_PHONE_STATE
             )
-        } else {
-            retrievePhoneNumber()
         }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         askForPermissions()
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun retrievePhoneNumber() {
-        val tMgr = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-        if (!tMgr.line1Number.isNullOrBlank()) {
-            database.setOwnerPhone(tMgr.line1Number)
-            edt_phone.setText(tMgr.line1Number)
-        }
     }
 
     private fun setupDebugOptions() {

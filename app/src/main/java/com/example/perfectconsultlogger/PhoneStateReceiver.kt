@@ -65,7 +65,7 @@ class PhoneStateReceiver : BroadcastReceiver() {
     }
 
     private fun syncCall(call: CallDetails, ownerNumber: String) {
-        val apiWrapper = ApiWrapper()
+        val apiWrapper = ApiWrapper(context)
         val otherNumber = call.phoneNumber
         val startTimestamp = call.callStartTimestamp
         val duration = call.callDuration

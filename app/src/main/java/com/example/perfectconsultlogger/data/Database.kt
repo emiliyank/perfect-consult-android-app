@@ -65,6 +65,19 @@ class Database(context: Context) {
         SettingsInsertTask(database).execute(ownerPhone)
     }
 
+    fun setNotificationToken(notificationToken: String) {
+        val ownerPhone = Settings(Settings.NOTIFICATION_TOKEN, notificationToken)
+        SettingsInsertTask(database).execute(ownerPhone)
+    }
+
+    fun getNotificationToken(listener: DataListener<String>) {
+        SettingRetrieveTask(Settings.NOTIFICATION_TOKEN, database, object : DataListener<Settings?> {
+            override fun onData(settings: Settings?) {
+                listener.onData(settings?.value ?: "")
+            }
+        }).execute()
+    }
+
     private class SettingsInsertTask(val database: AppDatabase) : AsyncTask<Settings, Void, Void>() {
         override fun doInBackground(vararg params: Settings?): Void? {
             params[0]?.let { database.settingsDao().insert(it) }

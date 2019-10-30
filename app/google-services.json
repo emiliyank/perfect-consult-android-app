@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "378738739639",
+    "firebase_url": "https://perfectconsultcrm.firebaseio.com",
+    "project_id": "perfectconsultcrm",
+    "storage_bucket": "perfectconsultcrm.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:378738739639:android:24a63baa627e8b319e4032",
+        "android_client_info": {
+          "package_name": "com.example.perfectconsultlogger"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "378738739639-phsfpv9v8po3otb0ebjpqqs5o6jtpv5h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.perfectconsultlogger",
+            "certificate_hash": "884cb52e4c68f3fa387ab3fe7099d782e0cc4a4b"
+          }
+        },
+        {
+          "client_id": "378738739639-5fshphvrvmk7uq96u8481b160jcv5lmt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_78p_Q7YPsnwCj0yL2mzw2c2Kq_tfdSk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "378738739639-5fshphvrvmk7uq96u8481b160jcv5lmt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

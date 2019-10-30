@@ -1,8 +1,6 @@
 package com.example.perfectconsultlogger.data.remote
 
-import com.example.perfectconsultlogger.data.remote.models.CallRequest
-import com.example.perfectconsultlogger.data.remote.models.LoginRequest
-import com.example.perfectconsultlogger.data.remote.models.LoginResponse
+import com.example.perfectconsultlogger.data.remote.models.*
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -13,4 +11,10 @@ interface ApiService {
 
     @POST("login")
     fun login(@Body request: LoginRequest): Call<LoginResponse>
+
+    @POST("logout")
+    fun logout(@Body request: LogoutRequest): Call<Void>
+
+    @POST("notification")
+    fun sendNotificationToken(request: NotificationTokenRequest): Call<Void>
 }

@@ -3,17 +3,14 @@ package com.example.perfectconsultlogger.data.remote
 import android.content.Context
 import android.util.Log
 import com.example.perfectconsultlogger.data.Database
-import com.example.perfectconsultlogger.data.remote.models.CallRequest
-import com.example.perfectconsultlogger.data.remote.models.LoginRequest
-import com.example.perfectconsultlogger.data.remote.models.LoginResponse
+import com.example.perfectconsultlogger.data.remote.models.*
 import retrofit2.Call
-import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 
-class ApiWrapper() {
+class ApiWrapper(val context: Context) {
 
     val TAG = "ApiWrapper"
 
@@ -22,15 +19,16 @@ class ApiWrapper() {
 
         private var instance: ApiWrapper? = null
 
-        fun getInstance(): ApiWrapper {
+        fun getInstance(context: Context): ApiWrapper {
             if (instance == null) {
-                instance = ApiWrapper()
+                instance = ApiWrapper(context)
             }
             return instance as ApiWrapper
         }
     }
 
     private var service: ApiService
+    private var database: Database
 
     init {
         val retrofit = Retrofit.Builder()
@@ -38,6 +36,7 @@ class ApiWrapper() {
             .baseUrl(BASE_URL)
             .build()
         service = retrofit.create(ApiService::class.java)
+        database = Database.getInstance(context)
     }
 
     fun createCallLogAsync(request: CallRequest) {
@@ -72,9 +71,41 @@ class ApiWrapper() {
         })
     }
 
+    fun logoutWithToken(callback: Callback<Boolean>) {
+        database.getUserToken(object: Database.DataListener<String> {
+            override fun onData(data: String) {
+                logout(data, callback)
+            }
+        })
+    }
+
+    private fun logout(token: String, callback: Callback<Boolean>) {
+        service.logout(LogoutRequest(token)).enqueue(object : retrofit2.Callback<Void> {
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                callback.onError(t.message ?: "")
+            }
+
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (response.isSuccessful && response.body() != null) {
+                    callback.onDataReceived(true)
+                } else {
+                    callback.onError(response.errorBody()?.string() ?: "")
+                }
+            }
+        })
+    }
+
     fun createCallLog(request: CallRequest): Boolean {
         val execute = service.createCallLog(request).execute()
         return execute.isSuccessful
+    }
+
+    fun sendNotificationToken(notificationToken: String) {
+        database.getUserToken(object: Database.DataListener<String> {
+            override fun onData(data: String) {
+                service.sendNotificationToken(NotificationTokenRequest(data, notificationToken))
+            }
+        })
     }
 
     public interface Callback<T> {

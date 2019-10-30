@@ -9,4 +9,7 @@
     <string name="error_field_mandatory">Field is mandatory</string>
     <string name="error_bad_format_email">Bad email format</string>
     <string name="error_password_short">Password too short</string>
+    <string name="welcome_to_the_perfect_consult_mobile_app">Welcome to the Perfect Consult Mobile App</string>
+    <string name="logout">Logout</string>
+    <string name="logout_unsuccessful">Logout is unsuccessful</string>
 </resources>

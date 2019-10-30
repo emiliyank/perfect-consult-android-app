@@ -40,15 +40,24 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun loginUser(email: String, password: String) {
-        val service = ApiWrapper.getInstance()
+        val service = ApiWrapper.getInstance(this)
         service.login(email, password, object: ApiWrapper.Callback<String> {
             override fun onDataReceived(data: String) {
                 database.setUserToken(data)
+                sendNotificationToken()
                 showMainScreen()
             }
 
             override fun onError(error: String) {
                 showError(error)
+            }
+        })
+    }
+
+    private fun sendNotificationToken() {
+        database.getNotificationToken(object: Database.DataListener<String> {
+            override fun onData(data: String) {
+                if(data.isNotEmpty()) ApiWrapper.getInstance(applicationContext).sendNotificationToken(data)
             }
         })
     }
