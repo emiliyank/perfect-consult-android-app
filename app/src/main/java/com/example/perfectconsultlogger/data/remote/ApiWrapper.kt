@@ -47,7 +47,7 @@ class ApiWrapper(val context: Context) {
 
             override fun onResponse(call: Call<Void?>, response: Response<Void?>) {
                 if (response.isSuccessful) {
-                    Log.d(TAG, "Success: send call ${request.otherPhone}")
+                    Log.d(TAG, "Success: send call ${request.phoneNumber}")
                 } else {
                     Log.d(TAG, "Failed to send call, request response: ${response.code()}")
                 }
@@ -103,7 +103,15 @@ class ApiWrapper(val context: Context) {
     fun sendNotificationToken(notificationToken: String) {
         database.getUserToken(object: Database.DataListener<String> {
             override fun onData(data: String) {
-                service.sendNotificationToken(NotificationTokenRequest(data, notificationToken))
+                service.sendNotificationToken(NotificationTokenRequest(data, notificationToken)).enqueue(object : retrofit2.Callback<Void> {
+                    override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                        Log.e(TAG, "request is successful: " + response.isSuccessful)
+                    }
+
+                    override fun onFailure(call: Call<Void>, t: Throwable) {
+                        Log.e(TAG, "request failed", t)
+                    }
+                })
             }
         })
     }
