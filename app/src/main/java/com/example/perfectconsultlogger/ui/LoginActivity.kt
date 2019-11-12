@@ -4,6 +4,7 @@ import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import com.example.perfectconsultlogger.PushNotificationReceiver.Companion.NOTIFICATION_PHONE_NUMBER_PAYLOAD
 import com.example.perfectconsultlogger.R
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
@@ -95,7 +96,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun showMainScreen() {
-        startActivity(Intent(this, MainActivity::class.java))
+        val mainActivity = Intent(this, MainActivity::class.java)
+        intent.extras?.getString(NOTIFICATION_PHONE_NUMBER_PAYLOAD)?.let {
+            mainActivity.putExtra(NOTIFICATION_PHONE_NUMBER_PAYLOAD, it)
+        }
+
+        startActivity(mainActivity)
         finish()
     }
 }

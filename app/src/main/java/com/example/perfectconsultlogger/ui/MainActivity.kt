@@ -2,7 +2,9 @@ package com.example.perfectconsultlogger.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.provider.CallLog
 import android.support.v4.app.ActivityCompat
@@ -13,6 +15,7 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import com.example.perfectconsultlogger.BuildConfig
+import com.example.perfectconsultlogger.PushNotificationReceiver.Companion.NOTIFICATION_PHONE_NUMBER_PAYLOAD
 import com.example.perfectconsultlogger.R
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
@@ -34,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         askForPermissions()
         setLastCallTimestamp()
         setupDebugOptions()
+        callClient()
     }
 
     private fun setLastCallTimestamp() {
@@ -143,5 +147,18 @@ class MainActivity : AppCompatActivity() {
         }
         managedCursor.close()
         return sb.toString()
+    }
+
+    private fun callClient() {
+        intent.extras?.getString(NOTIFICATION_PHONE_NUMBER_PAYLOAD)?.let {
+            initiateCall(it)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun initiateCall(phonenumber: String) {
+        val intent = Intent(Intent.ACTION_CALL)
+        intent.data = Uri.parse("tel:$phonenumber")
+        startActivity(intent)
     }
 }
