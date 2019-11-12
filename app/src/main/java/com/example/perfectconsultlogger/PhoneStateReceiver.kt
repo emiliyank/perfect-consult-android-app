@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.provider.CallLog
 import android.support.v4.content.ContextCompat
 import android.telephony.TelephonyManager
+import android.text.format.DateFormat
 import com.example.perfectconsultlogger.data.CallDetails
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
@@ -48,12 +49,13 @@ class PhoneStateReceiver : BroadcastReceiver() {
     ) {
         database.getLastSyncedCallTimestamp(object : Database.DataListener<Long> {
             override fun onData(lastSyncedCallTimestamp: Long) {
-                database.getOwnerPhone(object : Database.DataListener<String> {
-                    override fun onData(phoneNumber: String) {
-                        val unsyncedCalls = getUnsyncedCalls(nonNullContext, lastSyncedCallTimestamp)
+                database.getUserToken(object : Database.DataListener<String> {
+                    override fun onData(apiToken: String) {
+                        val unsyncedCalls =
+                            getUnsyncedCalls(nonNullContext, lastSyncedCallTimestamp)
                         var latestSyncedCallTimestamp = 0L
                         for (call in unsyncedCalls) {
-                            syncCall(call, phoneNumber)
+                            syncCall(call, apiToken, nonNullContext)
                             latestSyncedCallTimestamp = call.callStartTimestamp
 
                         }
@@ -64,19 +66,22 @@ class PhoneStateReceiver : BroadcastReceiver() {
         })
     }
 
-    private fun syncCall(call: CallDetails, ownerNumber: String) {
+    private fun syncCall(call: CallDetails, apiToken: String, context: Context) {
         val apiWrapper = ApiWrapper(context)
         val otherNumber = call.phoneNumber
-        val startTimestamp = call.callStartTimestamp
         val duration = call.callDuration
         val callType = call.callType
+        val startTimestamp = call.callStartTimestamp
+        val startDate = DateFormat.format("yyyy-MM-dd hh:mm:ss", Date(startTimestamp)).toString()
+
         val callRequest = CallRequest(
-            ownerNumber,
+            apiToken,
             otherNumber,
-            Date(startTimestamp).toString(),
+            startDate,
             duration,
             callType
         )
+
         apiWrapper.createCallLogAsync(callRequest)
     }
 

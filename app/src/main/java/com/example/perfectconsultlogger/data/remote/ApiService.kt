@@ -16,5 +16,5 @@ interface ApiService {
     fun logout(@Body request: LogoutRequest): Call<Void>
 
     @POST("notification")
-    fun sendNotificationToken(request: NotificationTokenRequest): Call<Void>
+    fun sendNotificationToken(@Body request: NotificationTokenRequest): Call<Void>
 }
