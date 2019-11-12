@@ -1,12 +1,10 @@
 package com.example.perfectconsultlogger.ui
 
-import android.annotation.SuppressLint
 import android.content.Intent
-import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
+import com.example.perfectconsultlogger.PushNotificationReceiver.Companion.NOTIFICATION_PHONE_NUMBER_PAYLOAD
 import com.example.perfectconsultlogger.R
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
@@ -21,10 +19,6 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        intent.extras?.getString("clientPhone")?.let {
-            initiateCall(it)
-        }
 
         database.getUserToken(object: Database.DataListener<String> {
             override fun onData(data: String) {
@@ -102,14 +96,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun showMainScreen() {
-        startActivity(Intent(this, MainActivity::class.java))
-        finish()
-    }
+        val mainActivity = Intent(this, MainActivity::class.java)
+        intent.extras?.getString(NOTIFICATION_PHONE_NUMBER_PAYLOAD)?.let {
+            mainActivity.putExtra(NOTIFICATION_PHONE_NUMBER_PAYLOAD, it)
+        }
 
-    @SuppressLint("MissingPermission")
-    private fun initiateCall(phonenumber: String) {
-        val intent = Intent(Intent.ACTION_CALL)
-        intent.data = Uri.parse("tel:$phonenumber")
-        startActivity(intent)
+        startActivity(mainActivity)
+        finish()
     }
 }
