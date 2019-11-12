@@ -22,24 +22,28 @@ class PushNotificationReceiver : FirebaseMessagingService() {
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
         Log.d(TAG, "From: " + remoteMessage!!.from!!)
 
+        var clientPhoneNumber: String? = null
         // Check if message contains a data payload.
         if (remoteMessage.data.size > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.data)
-
+            clientPhoneNumber = remoteMessage.data["clientPhone"]
         }
 
         // Check if message contains a notification payload.
-        if (remoteMessage.notification != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.notification!!.body!!)
-        }
+//        if (remoteMessage.notification != null) {
+//            Log.d(TAG, "Message Notification Body: " + remoteMessage.notification!!.body!!)
+//        }
 
-        initiateCall("+359777777777")
+        clientPhoneNumber?.let {
+            initiateCall(it)
+        }
     }
 
     @SuppressLint("MissingPermission")
     private fun initiateCall(phonenumber: String) {
         val intent = Intent(Intent.ACTION_CALL)
         intent.data = Uri.parse("tel:$phonenumber")
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
     }
 
