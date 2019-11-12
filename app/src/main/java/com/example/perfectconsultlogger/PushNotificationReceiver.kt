@@ -23,7 +23,6 @@ class PushNotificationReceiver : FirebaseMessagingService() {
 //        Check if message contains a data payload.
 //        if (remoteMessage.data.size > 0) {
 //            Log.d(TAG, "Message data payload: " + remoteMessage.data)
-//            clientPhoneNumber = remoteMessage.data["clientPhone"]
 //        }
     }
 
