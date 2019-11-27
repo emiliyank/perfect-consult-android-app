@@ -86,7 +86,7 @@ class ApiWrapper(val context: Context) {
             }
 
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                if (response.isSuccessful && response.body() != null) {
+                if (response.isSuccessful) {
                     callback.onDataReceived(true)
                 } else {
                     callback.onError(response.errorBody()?.string() ?: "")
