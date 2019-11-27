@@ -3,6 +3,7 @@ package com.example.perfectconsultlogger.data
 import android.arch.persistence.room.Room
 import android.content.Context
 import android.os.AsyncTask
+import java.util.concurrent.Executors
 
 class Database(context: Context) {
 
@@ -57,7 +58,7 @@ class Database(context: Context) {
     }
 
     fun deleteUserData() {
-        database.settingsDao().deleteAll()
+        SettingsDeleteTask(database).execute()
     }
 
     fun setUserToken(value: String) {
@@ -81,6 +82,13 @@ class Database(context: Context) {
     private class SettingsInsertTask(val database: AppDatabase) : AsyncTask<Settings, Void, Void>() {
         override fun doInBackground(vararg params: Settings?): Void? {
             params[0]?.let { database.settingsDao().insert(it) }
+            return null
+        }
+    }
+
+    private class SettingsDeleteTask(val database: AppDatabase) : AsyncTask<Void, Void, Void>() {
+        override fun doInBackground(vararg params: Void?): Void? {
+            database.settingsDao().deleteAllButNotificationToken(Settings.NOTIFICATION_TOKEN)
             return null
         }
     }

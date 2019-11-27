@@ -20,6 +20,9 @@ interface SettingsDao {
     @Query("DELETE FROM settings")
     fun deleteAll()
 
+    @Query("DELETE FROM settings WHERE `key`!=:notifTokenSettingName")
+    fun deleteAllButNotificationToken(notifTokenSettingName: String)
+
     @Query("SELECT * FROM settings WHERE `key`=:settingName")
     fun getSetting(settingName: String): Settings
 }
