@@ -53,13 +53,13 @@ class PhoneStateReceiver : BroadcastReceiver() {
                     override fun onData(apiToken: String) {
                         val unsyncedCalls =
                             getUnsyncedCalls(nonNullContext, lastSyncedCallTimestamp)
-                        var latestSyncedCallTimestamp = 0L
+                        var latestSyncedCallTimestamp = lastSyncedCallTimestamp
                         for (call in unsyncedCalls) {
                             syncCall(call, apiToken, nonNullContext)
                             latestSyncedCallTimestamp = call.callStartTimestamp
 
                         }
-                        database.setLastSyncedCallTimestamp(latestSyncedCallTimestamp)
+                        database.updateLastSyncedCallTimestamp(latestSyncedCallTimestamp)
                     }
                 })
             }
@@ -91,7 +91,7 @@ class PhoneStateReceiver : BroadcastReceiver() {
         val managedCursor = context.contentResolver.query(
             CallLog.Calls.CONTENT_URI,
             null,
-            android.provider.CallLog.Calls.DATE + " >= ?",
+            android.provider.CallLog.Calls.DATE + " > ?",
             arrayOf(sinceTimestamp.toString()),
             android.provider.CallLog.Calls.DATE
         );
