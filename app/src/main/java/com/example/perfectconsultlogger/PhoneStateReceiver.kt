@@ -72,7 +72,7 @@ class PhoneStateReceiver : BroadcastReceiver() {
         val duration = call.callDuration
         val callType = call.callType
         val startTimestamp = call.callStartTimestamp
-        val startDate = DateFormat.format("yyyy-MM-dd hh:mm:ss", Date(startTimestamp)).toString()
+        val startDate = DateFormat.format("yyyy-MM-dd HH:mm:ss", Date(startTimestamp)).toString()
 
         val callRequest = CallRequest(
             apiToken,
