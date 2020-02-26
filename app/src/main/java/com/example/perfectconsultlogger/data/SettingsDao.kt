@@ -2,6 +2,7 @@ package com.example.perfectconsultlogger.data
 
 import android.arch.persistence.room.Dao
 import android.arch.persistence.room.Insert
+import android.arch.persistence.room.Update
 import android.arch.persistence.room.OnConflictStrategy
 import android.arch.persistence.room.Query
 
@@ -16,6 +17,9 @@ interface SettingsDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(setting: Settings): Long
+
+    @Update(onConflict = OnConflictStrategy.ROLLBACK)
+    fun update(setting: Settings): Int
 
     @Query("DELETE FROM settings")
     fun deleteAll()

@@ -3,7 +3,6 @@ package com.example.perfectconsultlogger.data
 import android.arch.persistence.room.Room
 import android.content.Context
 import android.os.AsyncTask
-import java.util.concurrent.Executors
 
 class Database(context: Context) {
 
@@ -34,6 +33,25 @@ class Database(context: Context) {
     fun setLastSyncedCallTimestamp(value: Long) {
         val timestamp = Settings(Settings.LAST_SYNCED_CALL_TIMESTAMP, value.toString())
         SettingsInsertTask(database).execute(timestamp)
+    }
+
+    fun updateLastSyncedCallTimestamp(value: Long) {
+        SettingRetrieveTask(Settings.LAST_SYNCED_CALL_TIMESTAMP, database, object : DataListener<Settings?> {
+            override fun onData(settings: Settings?) {
+                updateTimestamp(value, settings)
+            }
+        }).execute()
+    }
+
+    private fun updateTimestamp(value: Long, setting: Settings?) {
+        if (setting == null) {
+            setLastSyncedCallTimestamp(value)
+            return
+        }
+
+        val updatedSetting = Settings(Settings.LAST_SYNCED_CALL_TIMESTAMP, value.toString())
+        updatedSetting.id = setting.id
+        SettingsUpdateTask(database).execute(updatedSetting)
     }
 
     fun getOwnerPhone(listener: DataListener<String>) {
@@ -82,6 +100,13 @@ class Database(context: Context) {
     private class SettingsInsertTask(val database: AppDatabase) : AsyncTask<Settings, Void, Void>() {
         override fun doInBackground(vararg params: Settings?): Void? {
             params[0]?.let { database.settingsDao().insert(it) }
+            return null
+        }
+    }
+
+    private class SettingsUpdateTask(val database: AppDatabase) : AsyncTask<Settings, Void, Void>() {
+        override fun doInBackground(vararg params: Settings?): Void? {
+            params[0]?.let { database.settingsDao().update(it) }
             return null
         }
     }
