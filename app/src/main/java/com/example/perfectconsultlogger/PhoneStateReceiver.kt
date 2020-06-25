@@ -33,8 +33,9 @@ class PhoneStateReceiver : BroadcastReceiver() {
                         Manifest.permission.READ_CALL_LOG
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
-                    syncUnsyncedCalls(database, nonNullContext)
-
+                    if (!isProcessingCalls) {
+                        syncUnsyncedCalls(database, nonNullContext)
+                    }
                 } else {
                     //TODO notify server for no permission granted
                 }
@@ -51,15 +52,17 @@ class PhoneStateReceiver : BroadcastReceiver() {
             override fun onData(lastSyncedCallTimestamp: Long) {
                 database.getUserToken(object : Database.DataListener<String> {
                     override fun onData(apiToken: String) {
+                        isProcessingCalls = true
                         val unsyncedCalls =
                             getUnsyncedCalls(nonNullContext, lastSyncedCallTimestamp)
                         var latestSyncedCallTimestamp = lastSyncedCallTimestamp
                         for (call in unsyncedCalls) {
                             syncCall(call, apiToken, nonNullContext)
                             latestSyncedCallTimestamp = call.callStartTimestamp
-
                         }
+
                         database.updateLastSyncedCallTimestamp(latestSyncedCallTimestamp)
+                        isProcessingCalls = false
                     }
                 })
             }
@@ -121,5 +124,10 @@ class PhoneStateReceiver : BroadcastReceiver() {
             )
         }
         return unsyncedCalls
+    }
+
+    companion object {
+
+        private var isProcessingCalls = false
     }
 }
