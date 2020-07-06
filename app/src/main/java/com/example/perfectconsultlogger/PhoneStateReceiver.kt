@@ -10,6 +10,7 @@ import android.provider.CallLog
 import android.support.v4.content.ContextCompat
 import android.telephony.TelephonyManager
 import android.text.format.DateFormat
+import android.util.Log
 import com.example.perfectconsultlogger.data.CallDetails
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
@@ -33,7 +34,10 @@ class PhoneStateReceiver : BroadcastReceiver() {
                         Manifest.permission.READ_CALL_LOG
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
-                    if (!isProcessingCalls) {
+                    Log.e("KKK", lastTimeSyncCallTriggered.toString())
+                    val isLastTriggerMoreThanASecondOld = System.currentTimeMillis() - lastTimeSyncCallTriggered >= MIN_TIME_DIFFERENCE_BETWEEN_CALL_SYNCS
+                    if (isLastTriggerMoreThanASecondOld) {
+                        lastTimeSyncCallTriggered = System.currentTimeMillis()
                         syncUnsyncedCalls(database, nonNullContext)
                     }
                 } else {
@@ -52,7 +56,6 @@ class PhoneStateReceiver : BroadcastReceiver() {
             override fun onData(lastSyncedCallTimestamp: Long) {
                 database.getUserToken(object : Database.DataListener<String> {
                     override fun onData(apiToken: String) {
-                        isProcessingCalls = true
                         val unsyncedCalls =
                             getUnsyncedCalls(nonNullContext, lastSyncedCallTimestamp)
                         var latestSyncedCallTimestamp = lastSyncedCallTimestamp
@@ -62,7 +65,6 @@ class PhoneStateReceiver : BroadcastReceiver() {
                         }
 
                         database.updateLastSyncedCallTimestamp(latestSyncedCallTimestamp)
-                        isProcessingCalls = false
                     }
                 })
             }
@@ -85,6 +87,7 @@ class PhoneStateReceiver : BroadcastReceiver() {
             callType
         )
 
+        Log.e("KKK", "${callRequest.phoneNumber} ${callRequest.startTime} ${callRequest.duration}")
         apiWrapper.createCallLogAsync(callRequest)
     }
 
@@ -128,6 +131,7 @@ class PhoneStateReceiver : BroadcastReceiver() {
 
     companion object {
 
-        private var isProcessingCalls = false
+        private var lastTimeSyncCallTriggered = 0L
+        private const val MIN_TIME_DIFFERENCE_BETWEEN_CALL_SYNCS = 1000L
     }
 }
