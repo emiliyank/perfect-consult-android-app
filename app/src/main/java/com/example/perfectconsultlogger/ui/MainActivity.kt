@@ -2,19 +2,25 @@ package com.example.perfectconsultlogger.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.CallLog
+import android.provider.Settings
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import com.example.perfectconsultlogger.BuildConfig
+import com.example.perfectconsultlogger.CallLogsService
 import com.example.perfectconsultlogger.PushNotificationReceiver.Companion.NOTIFICATION_PHONE_NUMBER_PAYLOAD
 import com.example.perfectconsultlogger.R
 import com.example.perfectconsultlogger.data.Database
@@ -40,10 +46,15 @@ class MainActivity : AppCompatActivity() {
         callClient()
     }
 
+    override fun onResume() {
+        super.onResume()
+        checkIsIgnoredBatteryOptimization()
+    }
+
     private fun setLastCallTimestamp() {
-        database.getLastSyncedCallTimestamp(object: Database.DataListener<Long> {
+        database.getLastSyncedCallTimestamp(object : Database.DataListener<Long> {
             override fun onData(data: Long) {
-                if(data == 0L) {
+                if (data == 0L) {
                     database.setLastSyncedCallTimestamp(System.currentTimeMillis())
                 }
             }
@@ -67,9 +78,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun logout() {
-        ApiWrapper.getInstance(this).logoutWithToken(object: ApiWrapper.Callback<Boolean> {
+        ApiWrapper.getInstance(this).logoutWithToken(object : ApiWrapper.Callback<Boolean> {
             override fun onDataReceived(data: Boolean) {
-                if(data) {
+                if (data) {
+                    callLogService.stopService(this@MainActivity)
                     database.deleteUserData()
                     finish()
                 } else {
@@ -88,21 +100,48 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun askForPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED
-            || ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS) != PackageManager.PERMISSION_GRANTED
-            || ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED
-            || ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED
-            || ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_PHONE_STATE
+            ) != PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.PROCESS_OUTGOING_CALLS
+            ) != PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_CALL_LOG
+            ) != PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.INTERNET
+            ) != PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CALL_PHONE
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_PHONE_STATE, Manifest.permission.PROCESS_OUTGOING_CALLS, Manifest.permission.READ_CALL_LOG, Manifest.permission.INTERNET),
+                arrayOf(
+                    Manifest.permission.CALL_PHONE,
+                    Manifest.permission.READ_PHONE_STATE,
+                    Manifest.permission.PROCESS_OUTGOING_CALLS,
+                    Manifest.permission.READ_CALL_LOG,
+                    Manifest.permission.INTERNET
+                ),
                 PERMISSION_REQUEST_READ_PHONE_STATE
             )
+        } else {
+            startService()
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         askForPermissions()
     }
@@ -120,7 +159,13 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun getCallDetails(): String {
         val sb = StringBuffer();
-        val managedCursor = contentResolver.query(CallLog.Calls.CONTENT_URI, null, null, null, android.provider.CallLog.Calls.DATE + " DESC limit 2;");
+        val managedCursor = contentResolver.query(
+            CallLog.Calls.CONTENT_URI,
+            null,
+            null,
+            null,
+            android.provider.CallLog.Calls.DATE + " DESC limit 2;"
+        );
         val number = managedCursor.getColumnIndex(CallLog.Calls.NUMBER)
         val type = managedCursor.getColumnIndex(CallLog.Calls.TYPE)
         val date = managedCursor.getColumnIndex(CallLog.Calls.DATE)
@@ -160,5 +205,29 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_CALL)
         intent.data = Uri.parse("tel:$phonenumber")
         startActivity(intent)
+    }
+
+    private fun checkIsIgnoredBatteryOptimization() {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+            val intent = Intent()
+            intent.action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+            intent.data = Uri.parse("package:$packageName")
+            startActivity(intent)
+        }
+    }
+
+    private fun startService() {
+        database.isServiceRunning(object : Database.DataListener<String> {
+            override fun onData(data: String) {
+                if (!(data.toBoolean())) {
+                    callLogService.startService(this@MainActivity)
+                }
+            }
+        })
+    }
+
+    companion object {
+        val callLogService = CallLogsService()
     }
 }

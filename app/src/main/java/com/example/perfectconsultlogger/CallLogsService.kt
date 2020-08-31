@@ -1,16 +1,20 @@
 package com.example.perfectconsultlogger
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Handler
+import android.os.IBinder
 import android.provider.CallLog
+import android.support.v4.app.NotificationCompat
 import android.support.v4.content.ContextCompat
-import android.telephony.TelephonyManager
 import android.text.format.DateFormat
 import android.util.Log
+
 import com.example.perfectconsultlogger.data.CallDetails
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
@@ -18,34 +22,82 @@ import com.example.perfectconsultlogger.data.remote.models.CallRequest
 import java.util.*
 import kotlin.collections.ArrayList
 
-class PhoneStateReceiver : BroadcastReceiver() {
+class CallLogsService : Service() {
 
-    private val TAG = "PhoneStateReceiver"
+    override fun onCreate() {
+        super.onCreate()
 
-    override fun onReceive(context: Context?, intent: Intent?) {
-        val nonNullIntent = intent ?: return
-        val nonNullContext = context ?: return
-        val database = Database.getInstance(nonNullContext)
-        val state = intent.extras.getString(TelephonyManager.EXTRA_STATE)
-        if (nonNullIntent.action == "android.intent.action.PHONE_STATE" || nonNullIntent.action == "android.intent.action.NEW_OUTGOING_CALL") {
-            if (state == TelephonyManager.EXTRA_STATE_IDLE) { //Phone call has ended
-                if (ContextCompat.checkSelfPermission(
-                        nonNullContext,
-                        Manifest.permission.READ_CALL_LOG
-                    ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    Log.e("KKK", lastTimeSyncCallTriggered.toString())
-                    val isLastTriggerMoreThanASecondOld = System.currentTimeMillis() - lastTimeSyncCallTriggered >= MIN_TIME_DIFFERENCE_BETWEEN_CALL_SYNCS
-                    if (isLastTriggerMoreThanASecondOld) {
-                        lastTimeSyncCallTriggered = System.currentTimeMillis()
-                        syncUnsyncedCalls(database, nonNullContext)
-                    }
-                } else {
-                    //TODO notify server for no permission granted
-                }
-            }
+        createNotificationChannel()
+
+        val notification = NotificationCompat.Builder(this, TAG)
+            .setContentText(NOTIFICATION_TEXT)
+            .setSmallIcon(R.drawable.ic_pc_logo)
+            .setSound(null)
+            .build()
+
+        startForeground(NOTIFICATION_ID, notification)
+    }
+
+    fun startService(cnt: Context) {
+        context = cnt
+        val startIntent = Intent(context, CallLogsService::class.java)
+        startIntent.putExtra(INTENT_EXTRA, NOTIFICATION_TEXT)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context?.let { ContextCompat.startForegroundService(it, startIntent) }
+        } else {
+            context?.startService(startIntent)
         }
+    }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        database = context?.let { Database.getInstance(it) }
+        database?.let { syncCallLog(it) }
+        setIsServiceRunning(true.toString())
+        return START_STICKY
+    }
+
+    fun stopService(context: Context) {
+        handler.post(object : Runnable {
+            override fun run() {
+                handler.removeCallbacks(this)
+            }
+        })
+        val stopIntent = Intent(context, CallLogsService::class.java)
+        context.stopService(stopIntent)
+        setIsServiceRunning(false.toString())
+    }
+
+    private fun setIsServiceRunning(value: String) {
+        database?.setIsServiceRunning(value)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        getSystemService(NotificationManager::class.java).also {
+            it.cancel(NOTIFICATION_ID)
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val serviceChannel = NotificationChannel(
+                TAG, "Foreground Service",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            serviceChannel.setSound(null, null)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(serviceChannel)
+        }
+    }
+
+    private fun syncCallLog(database: Database) {
+        handler.post(object : Runnable {
+            override fun run() {
+                Log.e(TAG, "check for unsync calls")
+                context?.let { syncUnsyncedCalls(database, it) }
+                handler.postDelayed(this, TIMER_SCHEDULE)
+            }
+        })
     }
 
     private fun syncUnsyncedCalls(
@@ -86,8 +138,8 @@ class PhoneStateReceiver : BroadcastReceiver() {
             duration,
             callType
         )
+        Log.e(TAG, "${callRequest.phoneNumber} ${callRequest.startTime} ${callRequest.duration}")
 
-        Log.e("KKK", "${callRequest.phoneNumber} ${callRequest.startTime} ${callRequest.duration}")
         apiWrapper.createCallLogAsync(callRequest)
     }
 
@@ -129,9 +181,20 @@ class PhoneStateReceiver : BroadcastReceiver() {
         return unsyncedCalls
     }
 
-    companion object {
-
-        private var lastTimeSyncCallTriggered = 0L
-        private const val MIN_TIME_DIFFERENCE_BETWEEN_CALL_SYNCS = 1000L
+    override fun onBind(p0: Intent?): IBinder? {
+        return null
     }
+
+    companion object {
+        private const val TAG = "LocationService"
+        private const val NOTIFICATION_TEXT = "Location Service is running..."
+        private const val NOTIFICATION_ID = 1
+        private const val INTENT_EXTRA = "inputExtra"
+        private const val ACTION_NOTIFICATION = "ACTION_NOTIFICATION"
+        private const val TIMER_SCHEDULE = 60 * 1000L
+        private var context: Context? = null
+        val handler = Handler()
+        private var database: Database? = null
+    }
+
 }

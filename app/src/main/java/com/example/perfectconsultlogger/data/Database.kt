@@ -19,15 +19,19 @@ class Database(context: Context) {
         }
     }
 
-    private val database: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "app-db")
-        .fallbackToDestructiveMigration().build()
+    private val database: AppDatabase =
+        Room.databaseBuilder(context, AppDatabase::class.java, "app-db")
+            .fallbackToDestructiveMigration().build()
 
     fun getLastSyncedCallTimestamp(listener: DataListener<Long>) {
-        SettingRetrieveTask(Settings.LAST_SYNCED_CALL_TIMESTAMP, database, object : DataListener<Settings?> {
-            override fun onData(settings: Settings?) {
-                listener.onData(settings?.value?.toLong() ?: 0L)
-            }
-        }).execute()
+        SettingRetrieveTask(
+            Settings.LAST_SYNCED_CALL_TIMESTAMP,
+            database,
+            object : DataListener<Settings?> {
+                override fun onData(settings: Settings?) {
+                    listener.onData(settings?.value?.toLong() ?: 0L)
+                }
+            }).execute()
     }
 
     fun setLastSyncedCallTimestamp(value: Long) {
@@ -36,11 +40,14 @@ class Database(context: Context) {
     }
 
     fun updateLastSyncedCallTimestamp(value: Long) {
-        SettingRetrieveTask(Settings.LAST_SYNCED_CALL_TIMESTAMP, database, object : DataListener<Settings?> {
-            override fun onData(settings: Settings?) {
-                updateTimestamp(value, settings)
-            }
-        }).execute()
+        SettingRetrieveTask(
+            Settings.LAST_SYNCED_CALL_TIMESTAMP,
+            database,
+            object : DataListener<Settings?> {
+                override fun onData(settings: Settings?) {
+                    updateTimestamp(value, settings)
+                }
+            }).execute()
     }
 
     private fun updateTimestamp(value: Long, setting: Settings?) {
@@ -67,6 +74,20 @@ class Database(context: Context) {
         SettingsInsertTask(database).execute(ownerPhone)
     }
 
+    fun isServiceRunning(listener: DataListener<String>) {
+        SettingRetrieveTask(
+            Settings.IS_SERVICE_RUNNING, database, object : DataListener<Settings?> {
+                override fun onData(settings: Settings?) {
+                    listener.onData(settings?.value ?: "")
+                }
+            }).execute()
+    }
+
+    fun setIsServiceRunning(value: String) {
+        val ownerPhone = Settings(Settings.IS_SERVICE_RUNNING, value)
+        SettingsInsertTask(database).execute(ownerPhone)
+    }
+
     fun getUserToken(listener: DataListener<String>) {
         SettingRetrieveTask(Settings.USER_TOKEN, database, object : DataListener<Settings?> {
             override fun onData(settings: Settings?) {
@@ -90,21 +111,26 @@ class Database(context: Context) {
     }
 
     fun getNotificationToken(listener: DataListener<String>) {
-        SettingRetrieveTask(Settings.NOTIFICATION_TOKEN, database, object : DataListener<Settings?> {
-            override fun onData(settings: Settings?) {
-                listener.onData(settings?.value ?: "")
-            }
-        }).execute()
+        SettingRetrieveTask(
+            Settings.NOTIFICATION_TOKEN,
+            database,
+            object : DataListener<Settings?> {
+                override fun onData(settings: Settings?) {
+                    listener.onData(settings?.value ?: "")
+                }
+            }).execute()
     }
 
-    private class SettingsInsertTask(val database: AppDatabase) : AsyncTask<Settings, Void, Void>() {
+    private class SettingsInsertTask(val database: AppDatabase) :
+        AsyncTask<Settings, Void, Void>() {
         override fun doInBackground(vararg params: Settings?): Void? {
             params[0]?.let { database.settingsDao().insert(it) }
             return null
         }
     }
 
-    private class SettingsUpdateTask(val database: AppDatabase) : AsyncTask<Settings, Void, Void>() {
+    private class SettingsUpdateTask(val database: AppDatabase) :
+        AsyncTask<Settings, Void, Void>() {
         override fun doInBackground(vararg params: Settings?): Void? {
             params[0]?.let { database.settingsDao().update(it) }
             return null
