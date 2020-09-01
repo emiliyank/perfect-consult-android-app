@@ -1,8 +1,9 @@
 package com.example.perfectconsultlogger.data
 
-import android.arch.persistence.room.Room
 import android.content.Context
 import android.os.AsyncTask
+import androidx.room.Room
+
 
 class Database(context: Context) {
 
@@ -78,14 +79,14 @@ class Database(context: Context) {
         SettingRetrieveTask(
             Settings.IS_SERVICE_RUNNING, database, object : DataListener<Settings?> {
                 override fun onData(settings: Settings?) {
-                    listener.onData(settings?.value ?: "")
+                    listener.onData(settings?.value ?: false.toString())
                 }
             }).execute()
     }
 
     fun setIsServiceRunning(value: String) {
-        val ownerPhone = Settings(Settings.IS_SERVICE_RUNNING, value)
-        SettingsInsertTask(database).execute(ownerPhone)
+        val isServiceRuunigValue = Settings(Settings.IS_SERVICE_RUNNING, value)
+        SettingsInsertTask(database).execute(isServiceRuunigValue)
     }
 
     fun getUserToken(listener: DataListener<String>) {

@@ -1,9 +1,10 @@
 package com.example.perfectconsultlogger.ui
 
 import android.content.Intent
-import android.support.v7.app.AppCompatActivity
+
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.example.perfectconsultlogger.PushNotificationReceiver.Companion.NOTIFICATION_PHONE_NUMBER_PAYLOAD
 import com.example.perfectconsultlogger.R
 import com.example.perfectconsultlogger.data.Database
@@ -20,9 +21,9 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        database.getUserToken(object: Database.DataListener<String> {
+        database.getUserToken(object : Database.DataListener<String> {
             override fun onData(data: String) {
-                if(data.isNotEmpty()) {
+                if (data.isNotEmpty()) {
                     showMainScreen()
                 } else {
                     setContentView(R.layout.activity_login)
@@ -35,14 +36,14 @@ class LoginActivity : AppCompatActivity() {
     private fun onLoginClicked() {
         val email = edtEmail.text.toString()
         val password = edtPassword.text.toString()
-        if(isEmailValid(email) && isPasswordValid(password)) {
+        if (isEmailValid(email) && isPasswordValid(password)) {
             loginUser(email, password)
         }
     }
 
     private fun loginUser(email: String, password: String) {
         val service = ApiWrapper.getInstance(this)
-        service.login(email, password, object: ApiWrapper.Callback<String> {
+        service.login(email, password, object : ApiWrapper.Callback<String> {
             override fun onDataReceived(data: String) {
                 database.setUserToken(data)
                 sendNotificationToken()
@@ -56,9 +57,10 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun sendNotificationToken() {
-        database.getNotificationToken(object: Database.DataListener<String> {
+        database.getNotificationToken(object : Database.DataListener<String> {
             override fun onData(data: String) {
-                if(data.isNotEmpty()) ApiWrapper.getInstance(applicationContext).sendNotificationToken(data)
+                if (data.isNotEmpty()) ApiWrapper.getInstance(applicationContext)
+                    .sendNotificationToken(data)
             }
         })
     }

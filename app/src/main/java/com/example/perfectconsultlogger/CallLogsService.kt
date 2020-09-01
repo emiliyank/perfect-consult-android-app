@@ -10,11 +10,10 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.provider.CallLog
-import android.support.v4.app.NotificationCompat
-import android.support.v4.content.ContextCompat
 import android.text.format.DateFormat
 import android.util.Log
-
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.example.perfectconsultlogger.data.CallDetails
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
@@ -186,8 +185,8 @@ class CallLogsService : Service() {
     }
 
     companion object {
-        private const val TAG = "LocationService"
-        private const val NOTIFICATION_TEXT = "Location Service is running..."
+        private const val TAG = "CallLogsService"
+        private const val NOTIFICATION_TEXT = "Perfect Consult is running..."
         private const val NOTIFICATION_ID = 1
         private const val INTENT_EXTRA = "inputExtra"
         private const val ACTION_NOTIFICATION = "ACTION_NOTIFICATION"

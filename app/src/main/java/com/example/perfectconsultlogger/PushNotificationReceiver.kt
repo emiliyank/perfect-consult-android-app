@@ -1,19 +1,19 @@
 package com.example.perfectconsultlogger
 
 import android.annotation.SuppressLint
-import android.util.Log
-import com.google.firebase.messaging.FirebaseMessagingService
-import com.google.firebase.messaging.RemoteMessage
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
 
 private const val TAG = "PushNotificationReceiver"
 
 class PushNotificationReceiver : FirebaseMessagingService() {
 
-    override fun onMessageReceived(remoteMessage: RemoteMessage?) {
+    override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
         Log.d(TAG, "From: " + remoteMessage!!.from!!)
 
@@ -34,7 +34,7 @@ class PushNotificationReceiver : FirebaseMessagingService() {
         startActivity(intent)
     }
 
-    override fun onNewToken(p0: String?) {
+    override fun onNewToken(p0: String) {
         super.onNewToken(p0)
         p0?.let { Database.getInstance(this).setNotificationToken(it) }
         p0?.let { ApiWrapper.getInstance(this).sendNotificationToken(it) }
