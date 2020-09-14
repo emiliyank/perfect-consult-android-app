@@ -43,7 +43,7 @@ dependencies {
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
 
-    // FCM
+    // https://firebase.google.com/support/release-notes/android
     implementation "com.google.firebase:firebase-messaging:$fcm_version"
 
     // Retrofit
