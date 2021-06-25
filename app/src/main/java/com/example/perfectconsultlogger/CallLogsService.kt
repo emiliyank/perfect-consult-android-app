@@ -72,7 +72,10 @@ class CallLogsService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        getSystemService(NotificationManager::class.java).also {
+        (ContextCompat.getSystemService(
+            this,
+            NotificationManager::class.java
+        ) as NotificationManager).also {
             it.cancel(NOTIFICATION_ID)
         }
     }
@@ -151,7 +154,8 @@ class CallLogsService : Service() {
             android.provider.CallLog.Calls.DATE + " > ?",
             arrayOf(sinceTimestamp.toString()),
             android.provider.CallLog.Calls.DATE
-        );
+        ) ?: return unsyncedCalls;
+
         val number = managedCursor.getColumnIndex(CallLog.Calls.NUMBER);
         val type = managedCursor.getColumnIndex(CallLog.Calls.TYPE);
         val date = managedCursor.getColumnIndex(CallLog.Calls.DATE);

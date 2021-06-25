@@ -15,7 +15,7 @@ import com.example.perfectconsultlogger.data.remote.ApiWrapper
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
-private const val TAG = "PushNotificationReceiver"
+private const val TAG = "PushNotificationReceive"
 
 class PushNotificationReceiver : FirebaseMessagingService() {
 

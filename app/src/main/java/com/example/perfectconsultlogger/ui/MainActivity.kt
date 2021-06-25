@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.CallLog
@@ -14,6 +15,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -163,7 +165,8 @@ class MainActivity : AppCompatActivity() {
             null,
             null,
             android.provider.CallLog.Calls.DATE + " DESC limit 2;"
-        );
+        ) ?: return sb.toString();
+
         val number = managedCursor.getColumnIndex(CallLog.Calls.NUMBER)
         val type = managedCursor.getColumnIndex(CallLog.Calls.TYPE)
         val date = managedCursor.getColumnIndex(CallLog.Calls.DATE)
@@ -198,13 +201,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("MissingPermission")
     private fun initiateCall(phonenumber: String) {
         val intent = Intent(Intent.ACTION_CALL)
         intent.data = Uri.parse("tel:$phonenumber")
         startActivity(intent)
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun checkIsIgnoredBatteryOptimization() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
