@@ -1,5 +1,6 @@
 package com.example.perfectconsultlogger
 
+import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -23,10 +24,20 @@ class PushNotificationReceiver : FirebaseMessagingService() {
         Log.d(TAG, "From: " + remoteMessage!!.from!!)
 
         remoteMessage?.data?.get(NOTIFICATION_PHONE_NUMBER_PAYLOAD)?.let {
-            startNotification(it)
-//            val snoozeIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$it"))
-//            startActivity(snoozeIntent)
+            if (isAppInForegrounded()) {
+                val snoozeIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$it"))
+                startActivity(snoozeIntent)
+            } else {
+                startNotification(it)
+            }
         }
+    }
+
+    private fun isAppInForegrounded(): Boolean {
+        val appProcessInfo = ActivityManager.RunningAppProcessInfo();
+        ActivityManager.getMyMemoryState(appProcessInfo);
+        return (appProcessInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND ||
+                appProcessInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE)
     }
 
     override fun onNewToken(p0: String) {
@@ -41,7 +52,7 @@ class PushNotificationReceiver : FirebaseMessagingService() {
             putExtra(EXTRA_PHONE_NUMBER, phoneNumber)
         }
         val pendingIntent: PendingIntent =
-            PendingIntent.getBroadcast(this, 0, snoozeIntent,  PendingIntent.FLAG_UPDATE_CURRENT)
+            PendingIntent.getBroadcast(this, 0, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT)
         return pendingIntent
     }
 
