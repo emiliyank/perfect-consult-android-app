@@ -1,6 +1,5 @@
 package com.example.perfectconsultlogger
 
-import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -25,6 +24,8 @@ class PushNotificationReceiver : FirebaseMessagingService() {
 
         remoteMessage?.data?.get(NOTIFICATION_PHONE_NUMBER_PAYLOAD)?.let {
             startNotification(it)
+//            val snoozeIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$it"))
+//            startActivity(snoozeIntent)
         }
     }
 

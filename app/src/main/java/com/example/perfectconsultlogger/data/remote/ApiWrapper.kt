@@ -15,7 +15,8 @@ class ApiWrapper(val context: Context) {
     val TAG = "ApiWrapper"
 
     companion object {
-        const val BASE_URL = "http://inveit280.voyager.icnhost.net/perfect-crm/public/api/"
+//        const val BASE_URL = "http://inveit280.voyager.icnhost.net/perfect-crm/public/api/"
+        const val BASE_URL = "https://test.perfectconsult.bg/api/"
 
         private var instance: ApiWrapper? = null
 
@@ -56,23 +57,27 @@ class ApiWrapper(val context: Context) {
     }
 
     fun login(email: String, password: String, callback: Callback<String>) {
-        service.login(LoginRequest(email, password)).enqueue(object : retrofit2.Callback<LoginResponse?> {
-            override fun onFailure(call: Call<LoginResponse?>, t: Throwable) {
-                callback.onError(t.message ?: "")
-            }
-
-            override fun onResponse(call: Call<LoginResponse?>, response: Response<LoginResponse?>) {
-                if (response.isSuccessful && response.body() != null && response.body()?.apiToken != null) {
-                    callback.onDataReceived(response.body()?.apiToken ?: "")
-                } else {
-                    callback.onError(response.errorBody()?.string() ?: "")
+        service.login(LoginRequest(email, password))
+            .enqueue(object : retrofit2.Callback<LoginResponse?> {
+                override fun onFailure(call: Call<LoginResponse?>, t: Throwable) {
+                    callback.onError(t.message ?: "")
                 }
-            }
-        })
+
+                override fun onResponse(
+                    call: Call<LoginResponse?>,
+                    response: Response<LoginResponse?>
+                ) {
+                    if (response.isSuccessful && response.body() != null && response.body()?.apiToken != null) {
+                        callback.onDataReceived(response.body()?.apiToken ?: "")
+                    } else {
+                        callback.onError(response.errorBody()?.string() ?: "")
+                    }
+                }
+            })
     }
 
     fun logoutWithToken(callback: Callback<Boolean>) {
-        database.getUserToken(object: Database.DataListener<String> {
+        database.getUserToken(object : Database.DataListener<String> {
             override fun onData(data: String) {
                 logout(data, callback)
             }
@@ -101,17 +106,18 @@ class ApiWrapper(val context: Context) {
     }
 
     fun sendNotificationToken(notificationToken: String) {
-        database.getUserToken(object: Database.DataListener<String> {
+        database.getUserToken(object : Database.DataListener<String> {
             override fun onData(data: String) {
-                service.sendNotificationToken(NotificationTokenRequest(data, notificationToken)).enqueue(object : retrofit2.Callback<Void> {
-                    override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                        Log.e(TAG, "request is successful: " + response.isSuccessful)
-                    }
+                service.sendNotificationToken(NotificationTokenRequest(data, notificationToken))
+                    .enqueue(object : retrofit2.Callback<Void> {
+                        override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                            Log.e(TAG, "request is successful: " + response.isSuccessful)
+                        }
 
-                    override fun onFailure(call: Call<Void>, t: Throwable) {
-                        Log.e(TAG, "request failed", t)
-                    }
-                })
+                        override fun onFailure(call: Call<Void>, t: Throwable) {
+                            Log.e(TAG, "request failed", t)
+                        }
+                    })
             }
         })
     }
