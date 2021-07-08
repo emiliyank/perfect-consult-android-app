@@ -15,8 +15,8 @@ class ApiWrapper(val context: Context) {
     val TAG = "ApiWrapper"
 
     companion object {
-        const val BASE_URL = "http://inveit280.voyager.icnhost.net/perfect-crm/public/api/"
-//        const val BASE_URL = "https://test.perfectconsult.bg/api/"
+//        const val BASE_URL = "http://inveit280.voyager.icnhost.net/perfect-crm/public/api/"
+        const val BASE_URL = "https://test.perfectconsult.bg/api/"
 
         private var instance: ApiWrapper? = null
 
