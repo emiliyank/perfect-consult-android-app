@@ -25,8 +25,10 @@ class PushNotificationReceiver : FirebaseMessagingService() {
 
         remoteMessage?.data?.get(NOTIFICATION_PHONE_NUMBER_PAYLOAD)?.let {
             if (isAppInForegrounded()) {
-                val snoozeIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$it"))
-                startActivity(snoozeIntent)
+                val intent = Intent(Intent.ACTION_CALL)
+                intent.data = Uri.parse("tel:$it")
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+               startActivity(intent)
             } else {
                 startNotification(it)
             }
