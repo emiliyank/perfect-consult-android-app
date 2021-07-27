@@ -2,6 +2,7 @@ package com.example.perfectconsultlogger.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -216,13 +217,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startService() {
-        database.isServiceRunning(object : Database.DataListener<String> {
-            override fun onData(data: String) {
-                if (!(data.toBoolean())) {
-                    callLogService.startService(this@MainActivity)
-                }
+        if (!isMyServiceRunning(CallLogsService::class.java)) {
+            callLogService.startService(this@MainActivity)
+        }
+    }
+
+    private fun isMyServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
             }
-        })
+        }
+        return false
     }
 
     companion object {
