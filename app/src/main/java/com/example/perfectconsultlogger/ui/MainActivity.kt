@@ -2,7 +2,6 @@ package com.example.perfectconsultlogger.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -18,10 +17,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.perfectconsultlogger.BuildConfig
-import com.example.perfectconsultlogger.CallLogsService
+import com.example.perfectconsultlogger.*
 import com.example.perfectconsultlogger.PushNotificationReceiver.Companion.NOTIFICATION_PHONE_NUMBER_PAYLOAD
-import com.example.perfectconsultlogger.R
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
 import kotlinx.android.synthetic.main.activity_main.*
@@ -132,7 +129,7 @@ class MainActivity : AppCompatActivity() {
                 PERMISSION_REQUEST_READ_PHONE_STATE
             )
         } else {
-            startService()
+            repeatingTaskHelper.scheduleRepeatingTasks()
         }
     }
 
@@ -216,23 +213,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startService() {
-        if (!isMyServiceRunning(CallLogsService::class.java)) {
-            callLogService.startService(this@MainActivity)
-        }
-    }
-
-    private fun isMyServiceRunning(serviceClass: Class<*>): Boolean {
-        val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
-        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
-            if (serviceClass.name == service.service.className) {
-                return true
-            }
-        }
-        return false
-    }
-
     companion object {
         val callLogService = CallLogsService()
+        val repeatingTaskHelper = RepeatingTaskHelper()
     }
 }
