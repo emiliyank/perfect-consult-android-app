@@ -6,8 +6,11 @@ import java.util.concurrent.TimeUnit
 
 
 private const val REPEAT_INTERVAL = 60L
+private const val REPEATING_TASK = "repeating task"
 
 class RepeatingTaskHelper {
+
+    private val callLogService = CallLogsService()
 
     fun scheduleRepeatingTasks() {
         val periodicRefreshRequest = PeriodicWorkRequest.Builder(
@@ -16,5 +19,6 @@ class RepeatingTaskHelper {
             TimeUnit.MINUTES
         ).build()
         WorkManager.getInstance().enqueue(periodicRefreshRequest)
+        callLogService.firebaseAnalyticsLogEven(REPEATING_TASK)
     }
 }

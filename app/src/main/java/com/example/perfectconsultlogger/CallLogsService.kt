@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.provider.CallLog
@@ -18,10 +19,15 @@ import com.example.perfectconsultlogger.data.CallDetails
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
 import com.example.perfectconsultlogger.data.remote.models.CallRequest
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.ktx.Firebase
 import java.util.*
 import kotlin.collections.ArrayList
 
 class CallLogsService : Service() {
+
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
 
     override fun onCreate() {
         super.onCreate()
@@ -43,8 +49,10 @@ class CallLogsService : Service() {
         startIntent.putExtra(INTENT_EXTRA, NOTIFICATION_TEXT)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context?.let { ContextCompat.startForegroundService(it, startIntent) }
+            firebaseAnalyticsLogEven(START_SERVICE_FOREGROUND)
         } else {
             context?.startService(startIntent)
+            firebaseAnalyticsLogEven(START_SERVICE)
         }
     }
 
@@ -52,6 +60,7 @@ class CallLogsService : Service() {
         database = context?.let { Database.getInstance(it) }
         database?.let { syncCallLog(it) }
         setIsServiceRunning(true.toString())
+        firebaseAnalyticsLogEven(ON_START_COMAND)
         return START_STICKY
     }
 
@@ -64,6 +73,7 @@ class CallLogsService : Service() {
         val stopIntent = Intent(context, CallLogsService::class.java)
         context.stopService(stopIntent)
         setIsServiceRunning(false.toString())
+        firebaseAnalyticsLogEven(STOP_SERVICE)
     }
 
     private fun setIsServiceRunning(value: String) {
@@ -71,10 +81,11 @@ class CallLogsService : Service() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         getSystemService(NotificationManager::class.java).also {
             it.cancel(NOTIFICATION_ID)
         }
+        firebaseAnalyticsLogEven(DESTROY_SERVICE)
+        super.onDestroy()
     }
 
     private fun createNotificationChannel() {
@@ -97,8 +108,10 @@ class CallLogsService : Service() {
                 handler.postDelayed(this, TIMER_SCHEDULE)
             }
         })
+        firebaseAnalyticsLogEven(SYNC_CALL_LOG)
     }
 
+    // TODO: 15.10.2021 г. log custom evenet
     private fun syncUnsyncedCalls(
         database: Database,
         nonNullContext: Context
@@ -120,6 +133,7 @@ class CallLogsService : Service() {
                 })
             }
         })
+        firebaseAnalyticsLogEven(SYNC_UNSYNCED_CALLS)
     }
 
     private fun syncCall(call: CallDetails, apiToken: String, context: Context) {
@@ -140,6 +154,7 @@ class CallLogsService : Service() {
         Log.e(TAG, "${callRequest.phoneNumber} ${callRequest.startTime} ${callRequest.duration}")
 
         apiWrapper.createCallLogAsync(callRequest)
+        firebaseAnalyticsLogEven(SYNG_CALL)
     }
 
     @SuppressLint("MissingPermission")
@@ -177,7 +192,18 @@ class CallLogsService : Service() {
                 )
             )
         }
+        firebaseAnalyticsLogEven(GET_UNSYNCED_CALLS)
         return unsyncedCalls
+    }
+
+    fun firebaseAnalyticsLogEven(event: String) {
+        val bundle = Bundle()
+        firebaseAnalytics = Firebase.analytics
+        bundle.putString(
+            FirebaseAnalytics.Param.METHOD,
+            event
+        )
+        firebaseAnalytics.logEvent(event, bundle)
     }
 
     override fun onBind(p0: Intent?): IBinder? {
@@ -191,6 +217,15 @@ class CallLogsService : Service() {
         private const val INTENT_EXTRA = "inputExtra"
         private const val ACTION_NOTIFICATION = "ACTION_NOTIFICATION"
         private const val TIMER_SCHEDULE = 60 * 1000L
+        private const val START_SERVICE = "start_service"
+        private const val START_SERVICE_FOREGROUND = "start_service_foreground"
+        private const val ON_START_COMAND = "on_start_comand"
+        private const val STOP_SERVICE = "stop_service"
+        private const val DESTROY_SERVICE = "destroy_service"
+        private const val SYNC_CALL_LOG = "sync_call_log"
+        private const val SYNC_UNSYNCED_CALLS = "sync_unsynced_calls"
+        private const val SYNG_CALL = "syng_call"
+        private const val GET_UNSYNCED_CALLS = "get_unsynced_calls"
         private var context: Context? = null
         val handler = Handler()
         private var database: Database? = null

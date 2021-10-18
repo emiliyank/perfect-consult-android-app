@@ -4,10 +4,10 @@ import android.app.ActivityManager
 import android.content.Context
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.example.perfectconsultlogger.ui.MainActivity
+
+private const val DO_WORK = "do_work"
 
 class NotificationRequestWorker(private val context: Context, workerParams: WorkerParameters) :
     Worker(context, workerParams) {
@@ -17,6 +17,7 @@ class NotificationRequestWorker(private val context: Context, workerParams: Work
     override fun doWork(): Result {
         Log.e("TTTT", "start manager")
         startService()
+        callLogService.firebaseAnalyticsLogEven(DO_WORK)
         return Result.success()
     }
 

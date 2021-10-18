@@ -7,7 +7,7 @@ buildscript {
     ext.constraintlayout_version = "2.0.1"
     ext.recycler_view_version = "1.1.0"
     ext.retrofit_version = "2.7.2"
-    ext.fcm_version = "20.2.4"
+    ext.fcm_version = "28.0.1"
     ext.coroutines_version = "1.3.4"
     ext.junit_version = "4.12"
     ext.espresso_version = "3.2.0"
@@ -20,9 +20,10 @@ buildscript {
         
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.1'
+        classpath 'com.android.tools.build:gradle:4.1.3'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.google.gms:google-services:4.3.3'
+        classpath 'com.google.gms:google-services:4.3.10'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.7.1'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }

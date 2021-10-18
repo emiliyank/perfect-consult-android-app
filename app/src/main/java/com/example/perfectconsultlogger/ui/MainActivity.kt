@@ -21,6 +21,7 @@ import com.example.perfectconsultlogger.*
 import com.example.perfectconsultlogger.PushNotificationReceiver.Companion.NOTIFICATION_PHONE_NUMBER_PAYLOAD
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
@@ -40,6 +41,8 @@ class MainActivity : AppCompatActivity() {
         setLastCallTimestamp()
         setupDebugOptions()
         callClient()
+//        throw(Exception())
+        FirebaseCrashlytics.getInstance().log("Crashlytics test")
     }
 
     override fun onResume() {
@@ -89,6 +92,7 @@ class MainActivity : AppCompatActivity() {
                 showError(getString(R.string.logout_unsuccessful))
             }
         })
+        callLogService.firebaseAnalyticsLogEven(LOGOUT)
     }
 
     private fun showError(error: String) {
@@ -216,5 +220,6 @@ class MainActivity : AppCompatActivity() {
     companion object {
         val callLogService = CallLogsService()
         val repeatingTaskHelper = RepeatingTaskHelper()
+        private const val LOGOUT = "logout"
     }
 }
