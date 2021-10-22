@@ -92,7 +92,7 @@ class MainActivity : AppCompatActivity() {
                 showError(getString(R.string.logout_unsuccessful))
             }
         })
-        callLogService.firebaseAnalyticsLogEven(LOGOUT)
+        pushNotificationReceiver.firebaseAnalyticsLogEven(LOGOUT)
     }
 
     private fun showError(error: String) {
@@ -219,6 +219,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         val callLogService = CallLogsService()
+        val pushNotificationReceiver = PushNotificationReceiver()
         val repeatingTaskHelper = RepeatingTaskHelper()
         private const val LOGOUT = "logout"
     }

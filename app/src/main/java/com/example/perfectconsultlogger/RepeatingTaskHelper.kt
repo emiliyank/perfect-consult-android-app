@@ -10,7 +10,7 @@ private const val REPEATING_TASK = "repeating task"
 
 class RepeatingTaskHelper {
 
-    private val callLogService = CallLogsService()
+    private val pushNotificationReceiver = PushNotificationReceiver()
 
     fun scheduleRepeatingTasks() {
         val periodicRefreshRequest = PeriodicWorkRequest.Builder(
@@ -19,6 +19,6 @@ class RepeatingTaskHelper {
             TimeUnit.MINUTES
         ).build()
         WorkManager.getInstance().enqueue(periodicRefreshRequest)
-        callLogService.firebaseAnalyticsLogEven(REPEATING_TASK)
+        pushNotificationReceiver.firebaseAnalyticsLogEven(REPEATING_TASK)
     }
 }

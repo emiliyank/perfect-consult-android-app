@@ -2,6 +2,7 @@ package com.example.perfectconsultlogger.data.remote
 
 import android.content.Context
 import android.util.Log
+import com.example.perfectconsultlogger.PushNotificationReceiver
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.models.*
 import retrofit2.Call
@@ -15,11 +16,15 @@ class ApiWrapper(val context: Context) {
     val TAG = "ApiWrapper"
 
     companion object {
-//        const val BASE_URL = "http://inveit280.voyager.icnhost.net/perfect-crm/public/api/"
+        //        const val BASE_URL = "http://inveit280.voyager.icnhost.net/perfect-crm/public/api/"
         const val BASE_URL = "https://test.perfectconsult.bg/api/"
-//        const val BASE_URL = "https://perfectconsult.bg/api/"
-//        const val BASE_URL = "https://baza.perfectconsult.bg/api/"
 
+        //        const val BASE_URL = "https://perfectconsult.bg/api/"
+//        const val BASE_URL = "https://baza.perfectconsult.bg/api/"
+        private const val CREATE_CALL = "create_call"
+        private const val CREATE_CALL_ON_FAILURE = "create_call_on_failure"
+        private const val CREATE_CALL_ON_RESPONSE_SUCCESS = "create_call_on_response_success"
+        private const val CREATE_CALL_ON_RESPONSE_FAILED = "create_call_on_response_failed"
         private var instance: ApiWrapper? = null
 
         fun getInstance(context: Context): ApiWrapper {
@@ -32,6 +37,7 @@ class ApiWrapper(val context: Context) {
 
     private var service: ApiService
     private var database: Database
+    private val pushNotificationReceiver = PushNotificationReceiver()
 
     init {
         val retrofit = Retrofit.Builder()
@@ -43,15 +49,21 @@ class ApiWrapper(val context: Context) {
     }
 
     fun createCallLogAsync(request: CallRequest) {
+        pushNotificationReceiver.firebaseAnalyticsLogEven(CREATE_CALL)
         service.createCallLog(request).enqueue(object : retrofit2.Callback<Void?> {
             override fun onFailure(call: Call<Void?>, t: Throwable) {
                 Log.d(TAG, t.toString())
+                pushNotificationReceiver.firebaseAnalyticsLogEven(CREATE_CALL_ON_FAILURE)
             }
 
             override fun onResponse(call: Call<Void?>, response: Response<Void?>) {
                 if (response.isSuccessful) {
                     Log.d(TAG, "Success: send call ${request.phoneNumber}")
+                    pushNotificationReceiver.firebaseAnalyticsLogEven(
+                        CREATE_CALL_ON_RESPONSE_SUCCESS
+                    )
                 } else {
+                    pushNotificationReceiver.firebaseAnalyticsLogEven(CREATE_CALL_ON_RESPONSE_FAILED)
                     Log.d(TAG, "Failed to send call, request response: ${response.code()}")
                 }
             }

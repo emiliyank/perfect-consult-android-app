@@ -7,7 +7,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.provider.CallLog
@@ -19,15 +18,13 @@ import com.example.perfectconsultlogger.data.CallDetails
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
 import com.example.perfectconsultlogger.data.remote.models.CallRequest
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.ktx.analytics
-import com.google.firebase.ktx.Firebase
 import java.util.*
 import kotlin.collections.ArrayList
 
+
 class CallLogsService : Service() {
 
-    private lateinit var firebaseAnalytics: FirebaseAnalytics
+    private val pushNotificationReceiver = PushNotificationReceiver()
 
     override fun onCreate() {
         super.onCreate()
@@ -49,10 +46,10 @@ class CallLogsService : Service() {
         startIntent.putExtra(INTENT_EXTRA, NOTIFICATION_TEXT)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context?.let { ContextCompat.startForegroundService(it, startIntent) }
-            firebaseAnalyticsLogEven(START_SERVICE_FOREGROUND)
+            pushNotificationReceiver.firebaseAnalyticsLogEven(START_SERVICE_FOREGROUND)
         } else {
             context?.startService(startIntent)
-            firebaseAnalyticsLogEven(START_SERVICE)
+            pushNotificationReceiver.firebaseAnalyticsLogEven(START_SERVICE)
         }
     }
 
@@ -60,7 +57,7 @@ class CallLogsService : Service() {
         database = context?.let { Database.getInstance(it) }
         database?.let { syncCallLog(it) }
         setIsServiceRunning(true.toString())
-        firebaseAnalyticsLogEven(ON_START_COMAND)
+        pushNotificationReceiver.firebaseAnalyticsLogEven(ON_START_COMAND)
         return START_STICKY
     }
 
@@ -73,7 +70,7 @@ class CallLogsService : Service() {
         val stopIntent = Intent(context, CallLogsService::class.java)
         context.stopService(stopIntent)
         setIsServiceRunning(false.toString())
-        firebaseAnalyticsLogEven(STOP_SERVICE)
+        pushNotificationReceiver.firebaseAnalyticsLogEven(STOP_SERVICE)
     }
 
     private fun setIsServiceRunning(value: String) {
@@ -84,7 +81,7 @@ class CallLogsService : Service() {
         getSystemService(NotificationManager::class.java).also {
             it.cancel(NOTIFICATION_ID)
         }
-        firebaseAnalyticsLogEven(DESTROY_SERVICE)
+        pushNotificationReceiver.firebaseAnalyticsLogEven(DESTROY_SERVICE)
         super.onDestroy()
     }
 
@@ -92,7 +89,7 @@ class CallLogsService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
                 TAG, "Foreground Service",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             )
             serviceChannel.setSound(null, null)
             val manager = getSystemService(NotificationManager::class.java)
@@ -108,10 +105,9 @@ class CallLogsService : Service() {
                 handler.postDelayed(this, TIMER_SCHEDULE)
             }
         })
-        firebaseAnalyticsLogEven(SYNC_CALL_LOG)
+        pushNotificationReceiver.firebaseAnalyticsLogEven(SYNC_CALL_LOG)
     }
 
-    // TODO: 15.10.2021 г. log custom evenet
     private fun syncUnsyncedCalls(
         database: Database,
         nonNullContext: Context
@@ -133,7 +129,7 @@ class CallLogsService : Service() {
                 })
             }
         })
-        firebaseAnalyticsLogEven(SYNC_UNSYNCED_CALLS)
+        pushNotificationReceiver.firebaseAnalyticsLogEven(SYNC_UNSYNCED_CALLS)
     }
 
     private fun syncCall(call: CallDetails, apiToken: String, context: Context) {
@@ -154,7 +150,7 @@ class CallLogsService : Service() {
         Log.e(TAG, "${callRequest.phoneNumber} ${callRequest.startTime} ${callRequest.duration}")
 
         apiWrapper.createCallLogAsync(callRequest)
-        firebaseAnalyticsLogEven(SYNG_CALL)
+        pushNotificationReceiver.firebaseAnalyticsLogEven(SYNG_CALL)
     }
 
     @SuppressLint("MissingPermission")
@@ -192,19 +188,10 @@ class CallLogsService : Service() {
                 )
             )
         }
-        firebaseAnalyticsLogEven(GET_UNSYNCED_CALLS)
+        pushNotificationReceiver.firebaseAnalyticsLogEven(GET_UNSYNCED_CALLS)
         return unsyncedCalls
     }
 
-    fun firebaseAnalyticsLogEven(event: String) {
-        val bundle = Bundle()
-        firebaseAnalytics = Firebase.analytics
-        bundle.putString(
-            FirebaseAnalytics.Param.METHOD,
-            event
-        )
-        firebaseAnalytics.logEvent(event, bundle)
-    }
 
     override fun onBind(p0: Intent?): IBinder? {
         return null

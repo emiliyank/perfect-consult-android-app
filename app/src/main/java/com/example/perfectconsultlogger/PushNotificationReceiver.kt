@@ -8,16 +8,22 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.perfectconsultlogger.data.Database
 import com.example.perfectconsultlogger.data.remote.ApiWrapper
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
 private const val TAG = "PushNotificationReceiver"
 
 class PushNotificationReceiver : FirebaseMessagingService() {
+
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
@@ -88,6 +94,16 @@ class PushNotificationReceiver : FirebaseMessagingService() {
         }
 
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
+    }
+
+    fun firebaseAnalyticsLogEven(event: String) {
+        val bundle = Bundle()
+        firebaseAnalytics = Firebase.analytics
+        bundle.putString(
+            FirebaseAnalytics.Param.METHOD,
+            event
+        )
+        firebaseAnalytics.logEvent(event, bundle)
     }
 
     companion object {
