@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.provider.CallLog
 import android.text.format.DateFormat
 import android.util.Log
@@ -25,6 +26,7 @@ import kotlin.collections.ArrayList
 class CallLogsService : Service() {
 
     private val pushNotificationReceiver = PushNotificationReceiver()
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate() {
         super.onCreate()
@@ -214,7 +216,6 @@ class CallLogsService : Service() {
         private const val SYNG_CALL = "syng_call"
         private const val GET_UNSYNCED_CALLS = "get_unsynced_calls"
         private var context: Context? = null
-        val handler = Handler()
         private var database: Database? = null
     }
 
